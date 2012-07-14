@@ -38,6 +38,35 @@ PRODUCT_PACKAGES += \
     VpnDialogs \
     abcc \
     atrace \
+    bouncycastle \
+    bu \
+    busybox \
+    cacerts \
+    com.android.location.provider \
+    com.android.location.provider.xml \
+    conscrypt \
+    core \
+    core-junit \
+    dalvikvm \
+    dexdeps \
+    dexdump \
+    dexlist \
+    dexopt \
+    dmtracedump \
+    drmserver \
+    dx \
+    ext \
+    ffmpeg \
+    framework-res \
+    hprof-conv \
+    icu.dat \
+    installd \
+    ip \
+    ip-up-vpn \
+    ip6tables \
+    iptables \
+    keystore \
+    keystore.default \
     libandroidfw \
     libaudiopreprocessing \
     libaudioutils \
@@ -70,11 +99,25 @@ PRODUCT_PACKAGES += \
     libstagefright_soft_vpxenc \
     libvariablespeed \
     libwebrtc_audio_preprocessing \
+    libwilhelm \
+    libz \
+    make_ext4fs \
+    lrzsz \
     mdnsd \
     mms-common \
     requestsync \
     telephony-common \
-    voip-common
+    voip-common \
+    mms-common \
+    x264
+
+# SELinux packages
+PRODUCT_PACKAGES += \
+    sepolicy \
+    file_contexts \
+    seapp_contexts \
+    property_contexts \
+    mac_permissions.xml
 
 # host-only dependencies
 ifeq ($(WITH_HOST_DALVIK),true)
