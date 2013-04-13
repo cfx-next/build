@@ -74,6 +74,7 @@ PRODUCT_PACKAGES += \
     libfilterpack_imageproc \
     libgabi++ \
     libkeystore \
+    libkissfft \
     libmdnssd \
     libnfc_ndef \
     libportable \
