@@ -68,8 +68,7 @@ endif
 
 TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
 
-TARGET_arm_CFLAGS :=    -O3 \
-                        -fgcse-after-reload \
+TARGET_arm_CFLAGS :=    -fgcse-after-reload \
                         -fipa-cp-clone \
                         -fpredictive-commoning \
                         -fsched-spec-load \
@@ -81,6 +80,12 @@ TARGET_arm_CFLAGS :=    -O3 \
                         -fstrict-aliasing \
                         -Wstrict-aliasing=3 \
                         -Werror=strict-aliasing
+
+ifeq ($(TARGET_BUILD_SMALL_SYSTEM),true)
+    TARGET_arm_CFLAGS :=    -O2
+else
+    TARGET_arm_CFLAGS :=    -O3
+endif
 
 ifeq ($(ARCH_ARM_HIGH_OPTIMIZATION_COMPAT),true)
     ifneq ($(TARGET_CPU_VARIANT),krait)
