@@ -111,7 +111,10 @@ PRODUCT_PACKAGES += \
     telephony-common \
     voip-common \
     mms-common \
-    x264
+    x264 \
+    zoneinfo.dat \
+    zoneinfo.idx \
+    zoneinfo.version
 
 # SELinux packages
 PRODUCT_PACKAGES += \
