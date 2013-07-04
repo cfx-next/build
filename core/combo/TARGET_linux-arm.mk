@@ -112,7 +112,7 @@ ifeq ($(ARCH_ARM_HIGH_OPTIMIZATION),true)
                             -pipe
 else
     TARGET_thumb_CFLAGS :=  -mthumb \
-                            -O2 \
+                            -Os \
                             -fomit-frame-pointer \
                             -fstrict-aliasing \
                             -Wstrict-aliasing=2 \
