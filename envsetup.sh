@@ -246,6 +246,7 @@ function set_stuff_for_environment()
     set_java_home
     setpaths
     set_sequence_number
+    build_toolchain
 }
 
 function set_sequence_number()
@@ -288,6 +289,15 @@ function addcompletions()
             echo "including $f"
             . $f
         done
+    fi
+}
+
+function build_toolchain()
+{
+    local build_type=$TARGET_BUILD_TYPE
+    local dev_type=development
+    if [ "$build_type" = "$dev_type" ]; then
+        $ANDROID_BUILD_TOP/external/codefirex/build.sh
     fi
 }
 

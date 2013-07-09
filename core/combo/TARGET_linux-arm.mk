@@ -35,7 +35,11 @@ TARGET_ARCH_VARIANT := armv5te
 endif
 
 ifeq ($(strip $(TARGET_GCC_VERSION_EXP)),)
-TARGET_GCC_VERSION := 4.8
+    ifeq ($(TARGET_BUILD_TYPE),development)
+        TARGET_GCC_VERSION := inline
+    else
+        TARGET_GCC_VERSION := 4.8
+    endif
 else
 TARGET_GCC_VERSION := $(TARGET_GCC_VERSION_EXP)
 endif
