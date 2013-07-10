@@ -154,8 +154,6 @@ TARGET_GLOBAL_LDFLAGS += \
 			-Wl,-z,relro \
 			-Wl,-z,now \
 			-Wl,--warn-shared-textrel \
-			-Wl,--fatal-warnings \
-			-Wl,--icf=safe \
 			$(arch_variant_ldflags)
 
 TARGET_GLOBAL_CFLAGS += -mthumb-interwork
