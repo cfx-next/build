@@ -34,12 +34,14 @@ ifeq ($(strip $(TARGET_ARCH_VARIANT)),)
 TARGET_ARCH_VARIANT := armv5te
 endif
 
-ifneq ($(TARGET_BUILD_TYPE),development)
-    ifeq ($(strip $(TARGET_GCC_VERSION_EXP)),)
-    TARGET_GCC_VERSION := 4.8
+ifeq ($(strip $(TARGET_GCC_VERSION_EXP)),)
+    ifeq ($(TARGET_BUILD_TYPE),development)
+        TARGET_GCC_VERSION := inline
     else
-    TARGET_GCC_VERSION := $(TARGET_GCC_VERSION_EXP)
+        TARGET_GCC_VERSION := 4.8
     endif
+else
+TARGET_GCC_VERSION := $(TARGET_GCC_VERSION_EXP)
 endif
 
 TARGET_ARCH_SPECIFIC_MAKEFILE := $(BUILD_COMBOS)/arch/$(TARGET_ARCH)/$(TARGET_ARCH_VARIANT).mk
