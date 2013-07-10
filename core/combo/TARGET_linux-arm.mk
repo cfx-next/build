@@ -181,7 +181,6 @@ TARGET_GLOBAL_LDFLAGS += \
 			-Wl,-z,relro \
 			-Wl,-z,now \
 			-Wl,--warn-shared-textrel \
-			-Wl,--icf=safe \
 			$(arch_variant_ldflags)
 
 # We only need thumb interworking in cases where thumb support
