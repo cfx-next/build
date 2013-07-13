@@ -20,37 +20,56 @@ arch_variant_cflags := \
     -mfloat-abi=softfp \
     -mfpu=neon
 
-mcpu-arg = $(shell sed 's/^-mcpu=//' <<< "$(call cc-option,-mcpu=$(1),-mcpu=$(2))")
-
+#
+# Cpu variant specific flags
+#
 ifeq ($(TARGET_CPU_VARIANT), cortex-a15)
-TARGET_CPU_VARIANT := $(call mcpu-arg,cortex-a15,cortex-a9)
-ARCH_ARM_HAVE_NEON_UNALIGNED_ACCESS    := true
-ARCH_ARM_NEON_MEMSET_DIVIDER           := 132
+ARCH_ARM_HAVE_NEON_UNALIGNED_ACCESS     := true
+ARCH_ARM_NEON_MEMSET_DIVIDER            := 132
 #ARCH_ARM_NEON_MEMCPY_ALIGNMENT_DIVIDER := 224
 endif
+
 ifeq ($(TARGET_CPU_VARIANT), krait)
-TARGET_CPU_VARIANT := $(call mcpu-arg,cortex-a9,cortex-a8)
-ARCH_ARM_HAVE_NEON_UNALIGNED_ACCESS    := true
-ARCH_ARM_NEON_MEMSET_DIVIDER           := 132
-ARCH_ARM_NEON_MEMCPY_ALIGNMENT_DIVIDER := 224
-endif
-ifeq ($(TARGET_CPU_VARIANT), cortex-a9)
-TARGET_CPU_VARIANT := $(call mcpu-arg,cortex-a9,cortex-a8)
-ARCH_ARM_HAVE_NEON_UNALIGNED_ACCESS    := true
-ARCH_ARM_NEON_MEMSET_DIVIDER           := 132
-ARCH_ARM_NEON_MEMCPY_ALIGNMENT_DIVIDER := 224
-endif
-ifeq ($(TARGET_CPU_VARIANT), cortex-a8)
-TARGET_CPU_VARIANT := $(call mcpu-arg,cortex-a8,)
-ARCH_ARM_HAVE_NEON_UNALIGNED_ACCESS    := true
-ARCH_ARM_NEON_MEMSET_DIVIDER           := 132
-ARCH_ARM_NEON_MEMCPY_ALIGNMENT_DIVIDER := 224
+ARCH_ARM_HAVE_NEON_UNALIGNED_ACCESS     := true
+ARCH_ARM_NEON_MEMSET_DIVIDER            := 132
+ARCH_ARM_NEON_MEMCPY_ALIGNMENT_DIVIDER  := 224
+TARGET_USE_KRAIT_BIONIC_OPTIMIZATION    := true
+TARGET_USE_KRAIT_PLD_SET                := true
+TARGET_KRAIT_BIONIC_PLDOFFS             := 10
+TARGET_KRAIT_BIONIC_PLDTHRESH           := 10
+TARGET_KRAIT_BIONIC_BBTHRESH            := 64
+TARGET_KRAIT_BIONIC_PLDSIZE             := 64
 endif
 
-ifneq (,$(findstring cpu=cortex-a9,$(TARGET_EXTRA_CFLAGS)))
-arch_variant_ldflags := \
-	-Wl,--no-fix-cortex-a8
+ifeq ($(TARGET_CPU_VARIANT), cortex-a9)
+ifeq ($(call is-vendor-board-platform,QCOM),true)
+TARGET_USE_SCORPION_BIONIC_OPTIMIZATION := true
+TARGET_USE_SCORPION_PLD_SET             := true
+TARGET_USE_SCORPION_PLD_SET             := true
+TARGET_SCORPION_BIONIC_PLDOFFS          := 6
+TARGET_SCORPION_BIONIC_PLDSIZE          := 128
+endif
+ARCH_ARM_HAVE_NEON_UNALIGNED_ACCESS     := true
+ARCH_ARM_NEON_MEMSET_DIVIDER            := 132
+ARCH_ARM_NEON_MEMCPY_ALIGNMENT_DIVIDER  := 224
+endif
+
+ifeq ($(TARGET_CPU_VARIANT), cortex-a8)
+ifeq ($(call is-vendor-board-platform,QCOM),true)
+TARGET_USE_SPARROW_BIONIC_OPTIMIZATION  := true
+endif
+ARCH_ARM_HAVE_NEON_UNALIGNED_ACCESS     := true
+ARCH_ARM_NEON_MEMSET_DIVIDER            := 132
+ARCH_ARM_NEON_MEMCPY_ALIGNMENT_DIVIDER  := 224
+endif
+
+# Neither "krait" or "generic" are valid -mcpu values.
+# Set a valid alternative for krait, and leave generic
+# without an argument.
+ifeq ($(filter generic krait, $(TARGET_CPU_VARIANT)),)
+arch_variant_cflags += -mcpu=$(TARGET_CPU_VARIANT)
 else
-arch_variant_ldflags := \
-	-Wl,--fix-cortex-a8
+ifeq ($(TARGET_CPU_VARIANT), krait)
+arch_variant_cflags += -mcpu=cortex-a9
+endif
 endif
