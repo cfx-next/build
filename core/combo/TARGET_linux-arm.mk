@@ -94,31 +94,17 @@ TARGET_arm_CFLAGS :=    -fgcse-after-reload \
 # as a 'hint'. If thumb is not enabled, these files are just
 # compiled as ARM.
 ifeq ($(ARCH_ARM_HAVE_THUMB_SUPPORT),true)
-    ifeq ($(ARCH_ARM_HIGH_OPTIMIZATION),true)
-        TARGET_thumb_CFLAGS :=  -mthumb \
-                                -fomit-frame-pointer \
-                                -fstrict-aliasing \
-                                -Wstrict-aliasing=2 \
-                                -Werror=strict-aliasing \
-                                -fgcse-after-reload \
-                                -fsched-spec-load \
-                                -funswitch-loops \
-                                -fvect-cost-model \
-                                -fipa-cp-clone \
-                                -pipe
-    else
-        TARGET_thumb_CFLAGS :=  -mthumb \
-                                -fomit-frame-pointer \
-                                -fstrict-aliasing \
-                                -Wstrict-aliasing=2 \
-                                -Werror=strict-aliasing \
-                                -fgcse-after-reload \
-                                -fsched-spec-load \
-                                -funswitch-loops \
-                                -fvect-cost-model \
-                                -fipa-cp-clone \
-                                -pipe
-    endif
+    TARGET_thumb_CFLAGS :=  -mthumb \
+                            -fomit-frame-pointer \
+                            -fstrict-aliasing \
+                            -Wstrict-aliasing=2 \
+                            -Werror=strict-aliasing \
+                            -fgcse-after-reload \
+                            -fsched-spec-load \
+                            -funswitch-loops \
+                            -fvect-cost-model \
+                            -fipa-cp-clone \
+                            -pipe
 else
     TARGET_thumb_CFLAGS := $(TARGET_arm_CFLAGS)
 endif
