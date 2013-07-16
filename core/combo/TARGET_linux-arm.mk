@@ -76,7 +76,7 @@ TARGET_arm_CFLAGS :=    -fgcse-after-reload \
                         -fipa-cp-clone \
                         -fpredictive-commoning \
                         -fsched-spec-load \
-                        -funswitch-loops \
+                        -funroll-loops \
                         -ftree-loop-distribution \
                         -ftree-loop-linear \
                         -fvect-cost-model \
@@ -94,7 +94,7 @@ TARGET_thumb_CFLAGS :=  -mthumb \
                         -Werror=strict-aliasing \
                         -fgcse-after-reload \
                         -fsched-spec-load \
-                        -funswitch-loops \
+                        -funroll-loops \
                         -foptimize-sincos \
                         -fvect-cost-model \
                         -fipa-cp-clone \
