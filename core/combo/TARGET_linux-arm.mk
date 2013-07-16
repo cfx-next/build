@@ -82,6 +82,8 @@ TARGET_arm_CFLAGS :=    -fgcse-after-reload \
                         -fvect-cost-model \
                         -fomit-frame-pointer \
                         -foptimize-sincos \
+                        -flto \
+                        -fno-toplevel-reorder \
                         -fstrict-aliasing \
                         -Wstrict-aliasing=3 \
                         -Werror=strict-aliasing
@@ -94,6 +96,8 @@ TARGET_thumb_CFLAGS :=  -mthumb \
                         -Werror=strict-aliasing \
                         -fgcse-after-reload \
                         -fsched-spec-load \
+                        -flto \
+                        -fno-toplevel-reorder \
                         -funroll-loops \
                         -foptimize-sincos \
                         -fvect-cost-model \
@@ -160,7 +164,10 @@ TARGET_GLOBAL_LDFLAGS += \
 
 TARGET_GLOBAL_CFLAGS += -mthumb-interwork
 
-TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
+TARGET_GLOBAL_CPPFLAGS += \
+                          -fvisibility-inlines-hidden \
+                          -flto \
+                          -fno-toplevel-reorder
 
 # More flags/options can be added here
 TARGET_RELEASE_CFLAGS += \
