@@ -86,6 +86,8 @@ TARGET_arm_CFLAGS :=    -fgcse-after-reload \
                         -fvect-cost-model \
                         -fomit-frame-pointer \
                         -foptimize-sincos \
+                        -flto \
+                        -fno-toplevel-reorder \
                         -fstrict-aliasing \
                         -Wstrict-aliasing=3 \
                         -Werror=strict-aliasing
@@ -104,6 +106,8 @@ ifeq ($(ARCH_ARM_HAVE_THUMB_SUPPORT),true)
                             -fsched-spec-load \
                             -funroll-loops \
                             -foptimize-sincos \
+                            -flto \
+                            -fno-toplevel-reorder \
                             -fvect-cost-model \
                             -fipa-cp-clone \
                             -pipe
@@ -181,7 +185,10 @@ else
 TARGET_GLOBAL_CFLAGS += -mno-thumb-interwork
 endif
 
-TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
+TARGET_GLOBAL_CPPFLAGS += \
+                          -fvisibility-inlines-hidden \
+                          -flto \
+                          -fno-toplevel-reorder
 
 # More flags/options can be added here
 TARGET_RELEASE_CFLAGS += \
