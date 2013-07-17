@@ -16,9 +16,12 @@ ARCH_ARM_HAVE_VFP_D32           := true
 ARCH_ARM_HAVE_NEON              := true
 
 arch_variant_cflags := \
-    -march=armv7-a \
     -mfloat-abi=softfp \
     -mfpu=neon
+
+ifneq ($(TARGET_CPU_VARIANT), cortex-a15)
+arch_variant_cflags += -march=armv7-a
+endif
 
 #
 # Cpu variant specific flags
