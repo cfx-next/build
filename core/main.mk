@@ -344,15 +344,6 @@ ifeq ($(TARGET_BUILD_VARIANT),codefirex)
   ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=0
   # Enable target debugging is enabled for codefirex builds
   enable_target_debugging := true
-
-  # Turn on Dalvik preoptimization for codefirex builds, but only if not
-  # explicitly disabled and the build is running on Linux (since host
-  # Dalvik isn't built for non-Linux hosts).
-  ifneq (true,$(DISABLE_DEXPREOPT))
-    ifeq ($(HOST_OS),linux)
-      WITH_DEXPREOPT := true
-    endif
-  endif
 endif # codefirex TARGET_BUILD_VARIANT
 
 ifeq (true,$(strip $(enable_target_debugging)))
