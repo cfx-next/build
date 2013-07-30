@@ -342,6 +342,8 @@ ifeq ($(TARGET_BUILD_VARIANT),codefirex)
   ADDITIONAL_DEFAULT_PROPERTIES += ro.allow.mock.location=0
   # Ensure checkjni is disabled for codefirex builds.
   ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=0
+  # Disable strict mode for codefirex builds.
+  ADDITIONAL_DEFAULT_PROPERTIES += persist.sys.strictmode.disable=true
   # Enable target debugging is enabled for codefirex builds
   enable_target_debugging := true
 endif # codefirex TARGET_BUILD_VARIANT
