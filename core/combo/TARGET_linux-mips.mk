@@ -66,6 +66,9 @@ else
         $(TARGET_OBJCOPY) --add-gnu-debuglink=$< $@
 endif
 
+# Useful macros
+include $(BUILD_SYSTEM)/linaro_compilerchecks.mk
+
 TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
 
 TARGET_mips_CFLAGS :=	-O2 \

@@ -67,6 +67,9 @@ endif
 
 TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
 
+# Useful macros
+include $(BUILD_SYSTEM)/linaro_compilerchecks.mk
+
 libc_root := bionic/libc
 libm_root := bionic/libm
 libstdc++_root := bionic/libstdc++

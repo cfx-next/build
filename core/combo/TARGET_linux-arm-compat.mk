@@ -46,6 +46,6 @@ endif
 # Do not use ISOC++11 mode with gnuism support if we're building on an
 # AOSP variant without the patchset
 ifneq ($(DEBUG_NO_STDCXX11),yes)
-TARGET_GLOBAL_CPPFLAGS += $(call cc-option,-std=gnu++11)
+TARGET_GLOBAL_CPPFLAGS += -std=gnu++11
 endif
 
