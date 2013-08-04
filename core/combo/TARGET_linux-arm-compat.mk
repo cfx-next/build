@@ -45,6 +45,7 @@ endif
 
 # Do not use ISOC++11 mode with gnuism support if we're building on an
 # AOSP variant without the patchset
+TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
 ifneq ($(DEBUG_NO_STDCXX11),yes)
 TARGET_GLOBAL_CPPFLAGS += -std=gnu++11
 endif
