@@ -160,6 +160,14 @@ target_libgcov := $(shell $(TARGET_CC) $(TARGET_GLOBAL_CFLAGS) \
         --print-file-name=libgcov.a)
 endif
 
+# Define LTO (Link Time Optimization options
+
+ifneq ($(strip $(DISABLE_BUILD_LTO)),)
+  # Disable global LTO if DISABLE_BUILD_LTO is set.
+  TARGET_LTO_CFLAGS := -flto \
+                       -fno-toplevel-reorder
+endif
+
 # Define FDO (Feedback Directed Optimization) options.
 
 TARGET_FDO_CFLAGS:=

@@ -85,8 +85,6 @@ TARGET_arm_CFLAGS :=    -fgcse-after-reload \
                         -fvect-cost-model \
                         -fomit-frame-pointer \
                         -foptimize-sincos \
-                        -flto \
-                        -fno-toplevel-reorder \
                         -fstrict-aliasing \
                         -Wstrict-aliasing=3 \
                         -Werror=strict-aliasing
@@ -99,8 +97,6 @@ TARGET_thumb_CFLAGS :=  -mthumb \
                         -Werror=strict-aliasing \
                         -fgcse-after-reload \
                         -fsched-spec-load \
-                        -flto \
-                        -fno-toplevel-reorder \
                         -funroll-loops \
                         -foptimize-sincos \
                         -fvect-cost-model \
@@ -167,10 +163,7 @@ TARGET_GLOBAL_LDFLAGS += \
 
 TARGET_GLOBAL_CFLAGS += -mthumb-interwork
 
-TARGET_GLOBAL_CPPFLAGS += \
-                          -fvisibility-inlines-hidden \
-                          -flto \
-                          -fno-toplevel-reorder
+TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
 
 # More flags/options can be added here
 TARGET_RELEASE_CFLAGS += \
@@ -196,6 +189,14 @@ ifneq ($(wildcard $(TARGET_CC)),)
 TARGET_LIBGCC := $(shell $(TARGET_CC) $(TARGET_GLOBAL_CFLAGS) -print-libgcc-file-name)
 target_libgcov := $(shell $(TARGET_CC) $(TARGET_GLOBAL_CFLAGS) \
         -print-file-name=libgcov.a)
+endif
+
+# Define LTO (Link Time Optimization options
+
+ifneq ($(strip $(DISABLE_BUILD_LTO)),)
+  # Disable global LTO if DISABLE_BUILD_LTO is set.
+  TARGET_LTO_CFLAGS := -flto \
+                       -fno-toplevel-reorder
 endif
 
 # Define FDO (Feedback Directed Optimization) options.
