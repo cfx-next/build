@@ -32,6 +32,13 @@ else
   endif
 endif
 
+# Enhance future LIPO support by recording non-mergeable compiler
+# optimizations in a .gnu.switches.text section if
+# BUILD_RECORD_COMPILATION_INFO_IN_ELF is set
+ifneq ($(strip $(BUILD_RECORD_COMPILATION_INFO_IN_ELF)),)
+  TARGET_CFX_CFLAGS += -frecord-compilation-info-in-elf
+endif
+
 # Turn off strict-aliasing if we're building an AOSP variant without the
 # patchset...
 ifeq ($(strip $(BUILD_DISABLE_STRICT_ALIASING)),)
