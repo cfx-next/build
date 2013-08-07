@@ -112,6 +112,14 @@ ifeq ($(strip $(LOCAL_CLANG)),true)
 endif
 
 ####################################################
+## Add cfX flags if codefirex build variant
+####################################################
+ifeq ($(TARGET_BUILD_VARIANT),codefirex)
+  LOCAL_CFLAGS += $(TARGET_CFX_CFLAGS)
+  LOCAL_CPPFLAGS += $(TARGET_CFX_CFLAGS)
+endif
+
+####################################################
 ## Add FDO flags if FDO is turned on and supported
 ####################################################
 ifeq ($(strip $(LOCAL_NO_FDO_SUPPORT)),)

@@ -103,7 +103,7 @@ TARGET_thumb_CFLAGS :=  -mthumb \
                         -fipa-cp-clone \
                         -pipe
 
-include $(BUILD_COMBOS)/TARGET_linux-arm-compat.mk
+include $(BUILD_COMBOS)/TARGET_linux-arm-cfx.mk
 
 # Set FORCE_ARM_DEBUGGING to "true" in your buildspec.mk
 # or in your environment to force a full arm build, even for
