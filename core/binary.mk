@@ -115,8 +115,10 @@ endif
 ## Add cfX flags if codefirex build variant
 ####################################################
 ifeq ($(TARGET_BUILD_VARIANT),codefirex)
-  LOCAL_CFLAGS += $(TARGET_CFX_CFLAGS)
-  LOCAL_CPPFLAGS += $(TARGET_CFX_CFLAGS)
+  ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+    LOCAL_CFLAGS += $(TARGET_CFX_CFLAGS)
+    LOCAL_CPPFLAGS += $(TARGET_CFX_CFLAGS)
+  endif
 endif
 
 ####################################################
