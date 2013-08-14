@@ -137,7 +137,7 @@ endif
 ## supported
 ####################################################
 ifeq ($(strip $(LOCAL_NO_AUTO_FDO_SUPPORT)),)
-  ifeq ($(string $(LOCAL_NO_FDO_SUPPORT)),)
+  ifeq ($(strip $(LOCAL_NO_FDO_SUPPORT)),)
     ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
       LOCAL_CFLAGS += $(TARGET_AUTO_FDO_CFLAGS)
       LOCAL_CPPFLAGS += $(TARGET_AUTO_FDO_CFLAGS)
