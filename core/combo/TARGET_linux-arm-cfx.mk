@@ -51,3 +51,8 @@ ifeq ($(strip $(BUILD_DISABLE_STDCXX11)),)
   TARGET_GLOBAL_CPPFLAGS += -std=gnu++11
 endif
 
+# Disable very common warnings on newer (4.8.y+) toolchains
+ifeq ($(strip $(BUILD_SHOW_NEW_COMMON_WARNINGS)),)
+  TARGET_CFX_CFLAGS += -Wno-unused-parameter -Wno-sign-compare \
+					   -Wno-unused-but-set-parameter
+endif
