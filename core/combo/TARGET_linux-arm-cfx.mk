@@ -41,7 +41,7 @@ endif
 
 # Turn off strict-aliasing if we're building an AOSP variant without the
 # patchset...
-ifeq ($(strip $(BUILD_DISABLE_STRICT_ALIASING)),)
+ifneq ($(strip $(BUILD_DISABLE_STRICT_ALIASING)),)
   TARGET_CFX_CFLAGS += -fno-strict-aliasing -Wno-error=strict-aliasing
 endif
 
