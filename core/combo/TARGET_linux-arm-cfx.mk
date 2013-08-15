@@ -54,5 +54,13 @@ endif
 # Disable very common warnings on newer (4.8.y+) toolchains
 ifeq ($(strip $(BUILD_SHOW_NEW_COMMON_WARNINGS)),)
   TARGET_CFX_CFLAGS += -Wno-unused-parameter -Wno-sign-compare \
-					   -Wno-unused-but-set-parameter
+                       -Wno-unused-but-set-parameter
+endif
+
+ifeq ($(TARGET_QCOM_DISPLAY_VARIANT),legacy)
+  TARGET_CFX_CFLAGS += -DLEGACY_QCOM_VARIANT
+endif
+
+ifeq ($(TARGET_QCOM_DISPLAY_VARIANT),caf)
+  TARGET_CFX_CFLAGS += -DCAF_QCOM_VARIANT
 endif
