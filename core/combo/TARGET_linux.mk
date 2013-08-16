@@ -73,7 +73,8 @@ ifneq ($(wildcard $(TARGET_CC)),)
                     -print-file-name=libgcov.a)
 endif
 
-ifeq ($(TARGET_BUILD_VARIANT),user)
+no_debug_variant := $(filter user codefirex,$(TARGET_BUILD_VARIANT))
+ifneq (,$(no_debug_variant))
   TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-debug $< -o $@
 else
   TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-debug $< -o $@ && \
