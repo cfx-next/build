@@ -1281,7 +1281,8 @@ endif
 
 $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
 	@echo "Package OTA: $@"
-	$(hide) ./build/tools/releasetools/ota_from_target_files -v \
+	$(hide) MKBOOTIMG=$(BOARD_CUSTOM_MKBOOTIMG) \
+	   ./build/tools/releasetools/ota_from_target_files -v \
 	   -p $(HOST_OUT) \
 	   -k $(KEY_CERT_PAIR) \
 	   --override_device=$(override_device) \
@@ -1319,7 +1320,8 @@ endif
 
 $(INTERNAL_UPDATE_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
 	@echo "Package: $@"
-	$(hide) ./build/tools/releasetools/img_from_target_files -v \
+	$(hide) MKBOOTIMG=$(BOARD_CUSTOM_MKBOOTIMG) \
+	   ./build/tools/releasetools/img_from_target_files -v \
 	   -s $(extensions) \
 	   -p $(HOST_OUT) \
 	   $(BUILT_TARGET_FILES_PACKAGE) $@
