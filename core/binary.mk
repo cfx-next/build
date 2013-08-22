@@ -170,6 +170,20 @@ ifeq ($(strip $(LOCAL_NO_LTO_SUPPORT)),)
   endif
 endif
 
+####################################################
+## Enable strict aliasing unless locally or
+# globally disabled, or a non-codefirex build
+# variant.
+####################################################
+NO_SA_CFLAGS := -fno-strict-aliasing \
+                -Wno-error=strict-aliasing
+ifneq ($(strip $(BUILD_DISABLE_STRICT_ALIASING)),)
+  ifneq ($(strip $(LOCAL_NO_STRICT_ALIASING_SUPPORT)),)
+    LOCAL_CFLAGS += $(NO_SA_CFLAGS)
+    LOCAL_CPPFLAGS += $(NO_SA_CFLAGS)
+  endif
+endif
+
 ###########################################################
 ## Explicitly declare assembly-only __ASSEMBLY__ macro for
 ## assembly source

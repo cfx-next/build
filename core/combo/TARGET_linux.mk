@@ -227,12 +227,6 @@ ifneq ($(strip $(BUILD_RECORD_COMPILATION_INFO_IN_ELF)),)
   TARGET_CFX_CFLAGS += -frecord-compilation-info-in-elf
 endif
 
-# Turn off strict-aliasing if we're building an AOSP variant without the
-# patchset...
-ifneq ($(strip $(BUILD_DISABLE_STRICT_ALIASING)),)
-  TARGET_CFX_CFLAGS += -fno-strict-aliasing -Wno-error=strict-aliasing
-endif
-
 # Do not use ISOC++11 mode with gnuism support if we're building on an
 # AOSP variant without the patchset
 ifeq ($(strip $(BUILD_DISABLE_STDCXX11)),)
