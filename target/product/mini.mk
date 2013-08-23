@@ -72,6 +72,7 @@ PRODUCT_PACKAGES += \
     cacerts \
     com.android.location.provider \
     com.android.location.provider.xml \
+    conscrypt \
     core \
     core-junit \
     dalvikvm \
@@ -85,7 +86,6 @@ PRODUCT_PACKAGES += \
     ext \
     framework-res \
     hprof-conv \
-    icu.dat \
     installd \
     ip \
     ip-up-vpn \
@@ -169,10 +169,6 @@ PRODUCT_PACKAGES += \
     Provision \
     hostapd \
     wpa_supplicant.conf
-
-
-PRODUCT_PACKAGES += \
-    icu.dat
 
 PRODUCT_PACKAGES += \
     librs_jni \
