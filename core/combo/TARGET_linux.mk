@@ -227,12 +227,6 @@ ifneq ($(strip $(BUILD_RECORD_COMPILATION_INFO_IN_ELF)),)
   TARGET_CFX_CFLAGS += -frecord-compilation-info-in-elf
 endif
 
-# Do not use ISOC++11 mode with gnuism support if we're building on an
-# AOSP variant without the patchset
-ifeq ($(strip $(BUILD_DISABLE_STDCXX11)),)
-  TARGET_GLOBAL_CPPFLAGS += -std=gnu++11
-endif
-
 # Disable very common warnings on newer (4.8.y+) toolchains
 ifeq ($(strip $(BUILD_SHOW_NEW_COMMON_WARNINGS)),)
   TARGET_CFX_CFLAGS += -Wno-unused-parameter -Wno-sign-compare \

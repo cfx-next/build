@@ -184,6 +184,18 @@ ifneq ($(strip $(BUILD_DISABLE_STRICT_ALIASING)),)
   endif
 endif
 
+####################################################
+## Enable ISOGNU++11 mode unless locally or
+# globally disabled.
+####################################################
+ifeq ($(strip $(BUILD_DISABLE_ISOGNUPP11)),)
+  ifeq ($(strip $(LOCAL_NO_ISOGNUPP11_SUPPORT)),)
+    ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+      LOCAL_CPPFLAGS += -std=gnu++11
+    endif
+  endif
+endif
+
 ###########################################################
 ## Explicitly declare assembly-only __ASSEMBLY__ macro for
 ## assembly source
