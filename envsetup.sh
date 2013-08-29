@@ -70,11 +70,6 @@ function check_product()
     # hide successful answers, but allow the errors to show
 }
 
-# Ensure our colors are used above preset colors
-unset GCC_COLORS
-# Always use diagnostic colors, supported in gcc 4.9.y+
-export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
-
 VARIANT_CHOICES=(user userdebug eng codefirex)
 TYPE_CHOICES=(release debug development)
 
@@ -248,6 +243,10 @@ function set_stuff_for_environment()
     setpaths
     set_sequence_number
     build_toolchain
+
+    export ANDROID_BUILD_TOP=$(gettop)
+    # With this environment variable new GCC can apply colors to warnings/errors
+    export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 }
 
 function set_sequence_number()
@@ -1414,7 +1413,8 @@ if [ "x$SHELL" != "x/bin/bash" ]; then
 fi
 
 # Execute the contents of any vendorsetup.sh files we can find.
-for f in `/bin/ls vendor/*/vendorsetup.sh vendor/*/*/vendorsetup.sh device/*/*/vendorsetup.sh 2> /dev/null`
+for f in `test -d device && find device -maxdepth 4 -name 'vendorsetup.sh' 2> /dev/null` \
+         `test -d vendor && find vendor -maxdepth 4 -name 'vendorsetup.sh' 2> /dev/null`
 do
     echo "including $f"
     . $f
