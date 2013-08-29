@@ -112,16 +112,6 @@ ifeq ($(strip $(LOCAL_CLANG)),true)
 endif
 
 ####################################################
-## Add cfX flags if codefirex build variant
-####################################################
-ifeq ($(TARGET_BUILD_VARIANT),codefirex)
-  ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
-    LOCAL_CFLAGS += $(TARGET_CFX_CFLAGS)
-    LOCAL_CPPFLAGS += $(TARGET_CFX_CFLAGS)
-  endif
-endif
-
-####################################################
 ## Add FDO flags if FDO is turned on and supported
 ####################################################
 ifneq ($(strip $(LOCAL_FDO_SUPPORT)),)
@@ -171,17 +161,13 @@ ifeq ($(strip $(LOCAL_NO_LTO_SUPPORT)),)
 endif
 
 ####################################################
-## Enable strict aliasing unless locally or
-# globally disabled, or a non-codefirex build
-# variant.
+## Enable strict aliasing unless locally disabled,
+# or a non-codefirex build variant.
 ####################################################
 NO_SA_CFLAGS := -fno-strict-aliasing \
                 -Wno-error=strict-aliasing
-ifneq ($(strip $(BUILD_DISABLE_STRICT_ALIASING)),)
-  ifneq ($(strip $(LOCAL_NO_STRICT_ALIASING_SUPPORT)),)
-    LOCAL_CFLAGS += $(NO_SA_CFLAGS)
-    LOCAL_CPPFLAGS += $(NO_SA_CFLAGS)
-  endif
+ifneq ($(strip $(LOCAL_NO_STRICT_ALIASING_SUPPORT)),)
+  LOCAL_CFX_CFLAGS += $(NO_SA_CFLAGS)
 endif
 
 ####################################################
@@ -193,6 +179,26 @@ ifeq ($(strip $(BUILD_DISABLE_ISOGNUPP11)),)
     ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
       LOCAL_CPPFLAGS += -std=gnu++11
     endif
+  endif
+endif
+
+####################################################
+## Add cfX flags if codefirex build variant
+####################################################
+ifeq ($(TARGET_BUILD_VARIANT),codefirex)
+  ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+    LOCAL_CFLAGS += $(TARGET_CFX_CFLAGS)
+    LOCAL_CPPFLAGS += $(TARGET_CFX_CFLAGS)
+  endif
+endif
+
+####################################################
+## Add local cfX flags if codefirex build variant
+####################################################
+ifeq ($(TARGET_BUILD_VARIANT),codefirex)
+  ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+    LOCAL_CFLAGS += $(LOCAL_CFX_CFLAGS)
+    LOCAL_CPPFLAGS += $(LOCAL_CFX_CFLAGS)
   endif
 endif
 
