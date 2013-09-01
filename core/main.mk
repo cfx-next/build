@@ -333,31 +333,27 @@ ifneq (,$(user_variant))
   ADDITIONAL_DEFAULT_PROPERTIES += ro.allow.mock.location=0
 
 else # !user_variant
-  # Turn on checkjni for non-user builds.
-  ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=1
   # Set device insecure for non-user builds.
   ADDITIONAL_DEFAULT_PROPERTIES += ro.secure=0
   # Allow mock locations by default for non user builds.
   ADDITIONAL_DEFAULT_PROPERTIES += ro.allow.mock.location=1
+  ## codefirex ##
+  ifeq ($(TARGET_BUILD_VARIANT),codefirex)
+    # Pick up useful tools and codefirex additions
+    tags_to_install += debug codefirex
+    # Ensure codefirex builds are easier to debug.
+    enable_target_debugging := true
+	# Enable Dalvik lock contention logging for codefirex builds.
+    ADDITIONAL_BUILD_PROPERTIES += dalvik.vm.lockprof.threshold=500
+    # Ensure checkjni is disabled for codefirex builds.
+    ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=0
+    # Disable strict mode for codefirex builds.
+    ADDITIONAL_DEFAULT_PROPERTIES += persist.sys.strictmode.disable=true
+  else # codefirex TARGET_BUILD_VARIANT
+  # Turn on checkjni for non-user builds.
+  ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=1
+  endif # !codefirex TARGET_BUILD_VARIANT
 endif # !user_variant TARGET_BUILD_VARIANT
-
-## codefirex ##
-ifeq ($(TARGET_BUILD_VARIANT),codefirex)
-  # Pick up useful tools and codefirex additions
-  tags_to_install += debug codefirex
-  # Target is insecure in codefirex builds.
-  ADDITIONAL_DEFAULT_PROPERTIES += ro.secure=0
-  # Enable Dalvik lock contention logging for codefirex builds.
-  ADDITIONAL_BUILD_PROPERTIES += dalvik.vm.lockprof.threshold=500
-  # Allow mock locations by default for codefirex builds
-  ADDITIONAL_DEFAULT_PROPERTIES += ro.allow.mock.location=0
-  # Ensure checkjni is disabled for codefirex builds.
-  ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=0
-  # Disable strict mode for codefirex builds.
-  ADDITIONAL_DEFAULT_PROPERTIES += persist.sys.strictmode.disable=true
-  # Enable target debugging is enabled for codefirex builds
-  enable_target_debugging := true
-endif # codefirex TARGET_BUILD_VARIANT
 
 ifeq (true,$(strip $(enable_target_debugging)))
   # Target is more debuggable and adbd is on by default
