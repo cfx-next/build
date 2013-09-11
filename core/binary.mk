@@ -241,12 +241,33 @@ $(LOCAL_INTERMEDIATE_TARGETS): PRIVATE_TARGET_GLOBAL_CPPFLAGS := $(TARGET_GLOBAL
 $(LOCAL_INTERMEDIATE_TARGETS): PRIVATE_NO_DEFAULT_COMPILER_FLAGS := \
     $(strip $(LOCAL_NO_DEFAULT_COMPILER_FLAGS))
 
+ifeq ($(strip $(WITH_SYNTAX_CHECK)),)
+  LOCAL_NO_SYNTAX_CHECK := true
+endif
+
+ifeq ($(strip $(WITH_STATIC_ANALYZER)),)
+  LOCAL_NO_STATIC_ANALYZER := true
+endif
+
+ifneq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+  my_syntax_arch := host
+else
+  my_syntax_arch := $(TARGET_ARCH)
+endif
+
 ifeq ($(strip $(LOCAL_CC)),)
   ifeq ($(strip $(LOCAL_CLANG)),true)
     LOCAL_CC := $(CLANG)
   else
     LOCAL_CC := $($(my_prefix)CC)
   endif
+endif
+ifneq ($(LOCAL_NO_STATIC_ANALYZER),true)
+  LOCAL_CC := $(SYNTAX_TOOLS_PREFIX)/ccc-analyzer $(my_syntax_arch) "$(LOCAL_CC)"
+else
+ifneq ($(LOCAL_NO_SYNTAX_CHECK),true)
+  LOCAL_CC := $(SYNTAX_TOOLS_PREFIX)/ccc-syntax $(my_syntax_arch) "$(LOCAL_CC)"
+endif
 endif
 $(LOCAL_INTERMEDIATE_TARGETS): PRIVATE_CC := $(LOCAL_CC)
 
@@ -256,6 +277,13 @@ ifeq ($(strip $(LOCAL_CXX)),)
   else
     LOCAL_CXX := $($(my_prefix)CXX)
   endif
+endif
+ifneq ($(LOCAL_NO_STATIC_ANALYZER),true)
+  LOCAL_CXX := $(SYNTAX_TOOLS_PREFIX)/cxx-analyzer $(my_syntax_arch) "$(LOCAL_CXX)"
+else
+ifneq ($(LOCAL_NO_SYNTAX_CHECK),true)
+  LOCAL_CXX := $(SYNTAX_TOOLS_PREFIX)/cxx-syntax $(my_syntax_arch) "$(LOCAL_CXX)"
+endif
 endif
 $(LOCAL_INTERMEDIATE_TARGETS): PRIVATE_CXX := $(LOCAL_CXX)
 

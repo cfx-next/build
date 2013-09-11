@@ -683,11 +683,26 @@ function gettop
     fi
 }
 
+# Return driver for "make", if any (eg. static analyzer)
+function getdriver()
+{
+    local T="$1"
+    test "$WITH_STATIC_ANALYZER" = "0" && unset WITH_STATIC_ANALYZER
+    if [ -n "$WITH_STATIC_ANALYZER" ]; then
+        echo "\
+$T/prebuilts/clang/linux-x86/host/3.3/tools/scan-build/scan-build \
+--use-analyzer $T/prebuilts/clang/linux-x86/host/3.3/bin/clang \
+--status-bugs \
+--top=$T"
+    fi
+}
+
 function m()
 {
-    T=$(gettop)
+    local T=$(gettop)
+    local DRV=$(getdriver $T)
     if [ "$T" ]; then
-        make -C $T -f build/core/main.mk $@
+        $DRV make -C $T -f build/core/main.mk $@
     else
         echo "Couldn't locate the top of the tree.  Try setting TOP."
     fi
@@ -725,7 +740,6 @@ function mm()
         $MM_MAKE $@
     else
         # Find the closest Android.mk file.
-        T=$(gettop)
         local M=$(findmakefile)
         # Remove the path to top as the makefilepath needs to be relative
         local M=`echo $M|sed 's:'$T'/::'`
@@ -734,7 +748,7 @@ function mm()
         elif [ ! "$M" ]; then
             echo "Couldn't locate a makefile from the current directory."
         else
-            ONE_SHOT_MAKEFILE=$M make -C $T -f build/core/main.mk all_modules $@
+            ONE_SHOT_MAKEFILE=$M $DRV make -C $T -f build/core/main.mk all_modules $@
         fi
     fi
 }
@@ -784,7 +798,7 @@ function mmm()
                 fi
             fi
         done
-        ONE_SHOT_MAKEFILE="$MAKEFILE" make -C $T -f build/core/main.mk $DASH_ARGS $MODULES $ARGS
+        ONE_SHOT_MAKEFILE="$MAKEFILE" $DRV make -C $T -f build/core/main.mk $DASH_ARGS $MODULES $ARGS
     else
         echo "Couldn't locate the top of the tree.  Try setting TOP."
     fi
@@ -792,21 +806,23 @@ function mmm()
 
 function mma()
 {
+  local T=$(gettop)
+  local DRV=$(getdriver $T)
   if [ -f build/core/envsetup.mk -a -f Makefile ]; then
-    make $@
+    $DRV make $@
   else
-    T=$(gettop)
     if [ ! "$T" ]; then
       echo "Couldn't locate the top of the tree.  Try setting TOP."
     fi
     local MY_PWD=`PWD= /bin/pwd|sed 's:'$T'/::'`
-    make -C $T -f build/core/main.mk $@ all_modules BUILD_MODULES_IN_PATHS="$MY_PWD"
+    $DRV make -C $T -f build/core/main.mk $@ all_modules BUILD_MODULES_IN_PATHS="$MY_PWD"
   fi
 }
 
 function mmma()
 {
-  T=$(gettop)
+  local T=$(gettop)
+  local DRV=$(getdriver $T)
   if [ "$T" ]; then
     local DASH_ARGS=$(echo "$@" | awk -v RS=" " -v ORS=" " '/^-.*$/')
     local DIRS=$(echo "$@" | awk -v RS=" " -v ORS=" " '/^[^-].*$/')
@@ -833,7 +849,7 @@ function mmma()
         esac
       fi
     done
-    make -C $T -f build/core/main.mk $DASH_ARGS $ARGS all_modules BUILD_MODULES_IN_PATHS="$MODULE_PATHS"
+    $DRV make -C $T -f build/core/main.mk $DASH_ARGS $ARGS all_modules BUILD_MODULES_IN_PATHS="$MODULE_PATHS"
   else
     echo "Couldn't locate the top of the tree.  Try setting TOP."
   fi
