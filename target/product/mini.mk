@@ -143,6 +143,7 @@ PRODUCT_PACKAGES += \
     libwilhelm \
     libz \
     mdnsd \
+    libminiz \
     network \
     okhttp \
     pand \

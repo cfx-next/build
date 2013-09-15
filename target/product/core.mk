@@ -103,6 +103,7 @@ PRODUCT_PACKAGES += \
     libwilhelm \
     libz \
     make_ext4fs \
+    libminiz \
     lrzsz \
     mdnsd \
     mms-common \

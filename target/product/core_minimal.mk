@@ -77,6 +77,7 @@ PRODUCT_PACKAGES += \
     libwilhelm \
     libz \
     make_ext4fs \
+    libminiz \
     screencap \
     sensorservice \
     uiautomator
