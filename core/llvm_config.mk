@@ -17,7 +17,18 @@ CLANG_CONFIG_EXTRA_CFLAGS := \
   -D__compiler_offsetof=__builtin_offsetof \
 
 CLANG_CONFIG_UNKNOWN_CFLAGS := \
-  -funswitch-loops
+  -fipa-cp-clone \
+  -foptimize-sincos \
+  -fpredictive-commoning \
+  -fsched-spec-load \
+  -ftree-loop-distribution \
+  -ftree-loop-linear \
+  -funswitch-loops \
+  -fvect-cost-model \
+  -march=armv7-a \
+  -march=armv7-a-neon \
+  -Wstrict-aliasing=3 \
+  -Wno-unused-but-set-parameter
 
 ifeq ($(TARGET_ARCH),arm)
   RS_TRIPLE := armv7-none-linux-gnueabi
