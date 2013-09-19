@@ -175,11 +175,11 @@ ifneq ($(strip $(LOCAL_NO_STRICT_ALIASING_SUPPORT)),)
 endif
 
 ####################################################
-## Enable ISOGNU++11 mode unless locally or
-# globally disabled.
+## Build in ISOC++11 mode with gnuism support unless
+# locally or globally disabled.
 ####################################################
-ifeq ($(strip $(BUILD_DISABLE_ISOGNUPP11)),)
-  ifeq ($(strip $(LOCAL_NO_ISOGNUPP11_SUPPORT)),)
+ifeq ($(strip $(BUILD_DISABLE_ISOCPP11)),)
+  ifeq ($(strip $(LOCAL_NO_ISOCPP11_SUPPORT)),)
     ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
       LOCAL_CPPFLAGS += -std=gnu++11
     endif
