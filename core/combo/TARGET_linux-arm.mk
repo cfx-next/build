@@ -57,7 +57,6 @@ TARGET_arm_CFLAGS :=    -fgcse-after-reload \
                         -ftree-loop-linear \
                         -fvect-cost-model \
                         -fomit-frame-pointer \
-                        -foptimize-sincos \
                         -fstrict-aliasing \
                         -Wstrict-aliasing=3 \
                         -Werror=strict-aliasing
@@ -71,7 +70,6 @@ TARGET_thumb_CFLAGS :=  -mthumb \
                         -fgcse-after-reload \
                         -fsched-spec-load \
                         -funroll-loops \
-                        -foptimize-sincos \
                         -fvect-cost-model \
                         -fipa-cp-clone \
                         -pipe
