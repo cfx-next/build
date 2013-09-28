@@ -201,13 +201,6 @@ else
   TARGET_thumb_CFLAGS += -Os
 endif
 
-# Always disable tree vectorization on neon devices due
-# to a slight performance degredation when neon fpu is
-# utilized. This may be fixed in compiler at some point.
-ifeq ($(ARCH_ARM_HAVE_NEON),true)
-  TARGET_CFX_CFLAGS += -fno-tree-vectorize
-endif
-
 # A clean way of only disabling a few optimizations that
 # cause problems on devices such as Grouper
 ifeq ($(ARCH_ARM_HIGH_OPTIMIZATION_COMPAT),true)
