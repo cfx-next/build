@@ -55,7 +55,7 @@ TARGET_arm_CFLAGS :=    -fgcse-after-reload \
                         -funroll-loops \
                         -ftree-loop-distribution \
                         -ftree-loop-linear \
-                        -fvect-cost-model \
+                        -fvect-cost-model=dynamic \
                         -fomit-frame-pointer \
                         -fstrict-aliasing \
                         -Wstrict-aliasing=3 \
@@ -70,7 +70,6 @@ TARGET_thumb_CFLAGS :=  -mthumb \
                         -fgcse-after-reload \
                         -fsched-spec-load \
                         -funroll-loops \
-                        -fvect-cost-model \
                         -fipa-cp-clone \
                         -pipe
 
