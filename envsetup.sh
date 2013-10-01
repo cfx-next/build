@@ -298,7 +298,7 @@ function build_toolchain()
     local build_type=$TARGET_BUILD_TYPE
     local dev_type=development
     if [ "$build_type" = "$dev_type" ]; then
-        toolchain_build_arm-linux-androideabi
+        toolchain_build arm-linux-androideabi
     fi
 }
 
