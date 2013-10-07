@@ -52,6 +52,7 @@ PRODUCT_PACKAGES += \
     ext \
     framework-res \
     hprof-conv \
+    idmap \
     installd \
     ip \
     ip-up-vpn \
