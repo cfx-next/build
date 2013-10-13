@@ -136,6 +136,7 @@ function setpaths()
     CODE_REVIEWS=
     prebuiltdir=$(getprebuilt)
     gccprebuiltdir=$(get_abs_build_var ANDROID_GCC_PREBUILTS)
+    clangprebuiltdir=prebuilts/clang/linux-x86
 
     # defined in core/config.mk
     targetgccversion=$(get_build_var TARGET_GCC_VERSION)
@@ -164,8 +165,8 @@ function setpaths()
     case $ARCH in
         arm)
 
-            local ARM_GCC_VER=$(get_build_var TARGET_ARM_EABI_GCC_VERSION)
-            case $ARM_GCC_VER in
+            local ARM_EABI_VER=$(get_build_var TARGET_ARM_EABI_VERSION)
+            case $ARM_EABI_VER in
             4.4.3-aosp) toolchaindir=arm/arm-eabi-4.4.3-aosp/bin
                 ;;
             4.6-aosp) toolchaindir=arm/arm-eabi-4.6-aosp/bin
@@ -176,11 +177,13 @@ function setpaths()
                 ;;
             4.8) toolchaindir=arm/arm-eabi-4.8/bin
                 ;;
+            clang|clang-3.4) clangdir=clang-3.4/bin
+                ;;
             *)
-                if [ -d "$ARM_GCC_VER" ]; then
-                    echo "Error: Can't find unknown GCC version: $TARGET_ARM_EABI_GCC_VERSION"
+                if [ -d "$ARM_EABI_VER" ]; then
+                    echo "Error: Can't find unknown toolchain version: $TARGET_ARM_EABI_VERSION"
                     echo "Now using cfX-Toolchain arm-eabi 4.7.y for kernel"
-                    export TARGET_ARM_EABI_GCC_VERSION=4.7
+                    export TARGET_ARM_EABI_VERSION=4.7
                 fi
                 toolchaindir=arm/arm-eabi-4.7/bin
                 ;;
@@ -189,6 +192,11 @@ function setpaths()
                  export ARM_EABI_TOOLCHAIN="$gccprebuiltdir/$toolchaindir"
                  ARM_EABI_TOOLCHAIN_PATH=":$gccprebuiltdir/$toolchaindir"
             fi
+            if [ $clangdir ]; then
+                 export ARM_EABI_TOOLCHAIN="$clangprebuiltdir/$clangdir"
+                 ARM_EABI_TOOLCHAIN_PATH=":$clangprebuiltdir/$clangdir"
+            fi
+
             ;;
         mips) toolchaindir=mips/mips-eabi-4.4.3/bin
             ;;
