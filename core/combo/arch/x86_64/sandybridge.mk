@@ -1,4 +1,4 @@
-# Configuration for Linux on x86.
+# Configuration for Linux on x86_64.
 # Generating binaries for SandyBridge processors.
 #
 ARCH_X86_HAVE_SSSE3  := true
@@ -8,7 +8,4 @@ ARCH_X86_HAVE_AVX    := true
 
 # CFLAGS for this arch
 arch_variant_cflags := \
-	-march=corei7-avx \
-	-mstackrealign \
-	-mfpmath=sse \
-
+	-march=corei7-avx

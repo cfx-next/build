@@ -71,6 +71,6 @@ ifeq ($(filter generic krait, $(TARGET_CPU_VARIANT)),)
   arch_variant_cflags += -mcpu=$(TARGET_CPU_VARIANT)
 else
   ifeq ($(TARGET_CPU_VARIANT), krait)
-    arch_variant_cflags += -mcpu=cortex-a9
+    arch_variant_cflags += -mcpu=cortex-a15
   endif
 endif
