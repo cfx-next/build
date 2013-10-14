@@ -18,7 +18,7 @@ arch_variant_cflags := \
     -mfloat-abi=softfp \
     -mfpu=neon
 
-ifneq ($(TARGET_CPU_VARIANT), cortex-a15)
+ifeq ($(filter cortex-a7 cortex-a15, $(TARGET_CPU_VARIANT)),)
   arch_variant_cflags += -march=armv7-a
 endif
 
