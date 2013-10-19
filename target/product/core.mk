@@ -67,6 +67,7 @@ PRODUCT_PACKAGES += \
     iptables \
     keystore \
     keystore.default \
+    libanalogradiobroadcasting \
     libandroidfw \
     libaudiopreprocessing \
     libaudioutils \
