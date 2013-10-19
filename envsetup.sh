@@ -136,7 +136,7 @@ function setpaths()
     CODE_REVIEWS=
     prebuiltdir=$(getprebuilt)
     gccprebuiltdir=$(get_abs_build_var ANDROID_GCC_PREBUILTS)
-    clangprebuiltdir=prebuilts/clang/linux-x86
+    clangprebuiltdir=$(gettop)/prebuilts/clang/linux-x86
 
     # defined in core/config.mk
     targetgccversion=$(get_build_var TARGET_GCC_VERSION)
@@ -181,7 +181,7 @@ function setpaths()
                 ;;
             4.8) toolchaindir=arm/arm-eabi-4.8/bin
                 ;;
-            clang|clang-3.4) clangdir=clang-3.4/bin
+            clang|clang-3.4) clangdir=3.4/bin
                 ;;
             *)
                 if [ -d "$ARM_EABI_VER" ]; then
