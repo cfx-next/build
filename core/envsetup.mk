@@ -1,6 +1,6 @@
 # Variables we check:
 #     HOST_BUILD_TYPE = { release debug }
-#     TARGET_BUILD_TYPE = { release debug development experimental }
+#     TARGET_BUILD_TYPE = { release debug development }
 # and we output a bunch of variables, see the case statement at
 # the bottom for the full list
 #     OUT_DIR is also set to "out" if it's not already set.
@@ -157,7 +157,6 @@ DEBUG_OUT_DIR := $(OUT_DIR)/debug
 # if necessary.
 TARGET_OUT_ROOT_release := $(OUT_DIR)/target
 TARGET_OUT_ROOT_development := $(OUT_DIR)/target
-TARGET_OUT_ROOT_experimental := $OUT_DIR)/target
 TARGET_OUT_ROOT_debug := $(DEBUG_OUT_DIR)/target
 TARGET_OUT_ROOT := $(TARGET_OUT_ROOT_$(TARGET_BUILD_TYPE))
 

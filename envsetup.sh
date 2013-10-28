@@ -72,7 +72,7 @@ function check_product()
 }
 
 VARIANT_CHOICES=(user userdebug eng codefirex)
-TYPE_CHOICES=(release debug development experimental)
+TYPE_CHOICES=(release debug development)
 
 # check to see if the supplied type is valid
 function check_type()

@@ -18,7 +18,7 @@
 # and TARGET_linux-x86.mk
 
 ifeq ($(strip $(TARGET_GCC_VERSION_EXP)),)
-  TARGET_GCC_VERSION := 4.7
+  TARGET_GCC_VERSION := 4.8
 else
   TARGET_GCC_VERSION := $(TARGET_GCC_VERSION_EXP)
 endif
@@ -52,15 +52,6 @@ libthread_db_root := bionic/libthread_db
 ifeq ($(FORCE_TARGET_DEBUGGING),true)
   TARGET_GLOBAL_CFLAGS += -fno-omit-frame-pointer \
                           -fno-strict-aliasing
-endif
-
-# This warning causes dalvik not to build with gcc 4.6+ and -Werror.
-# # We cannot turn it off blindly since the option is not available
-# # in gcc-4.4.x.
-ifneq ($(filter 4.6 4.6.% 4.7 4.7.% 4.8 4.8.%, $(TARGET_GCC_VERSION)),)
-  TARGET_GLOBAL_CFLAGS += -Wno-unused-but-set-variable \
-                          -fno-strict-volatile-bitfields \
-                          -Wno-unused-parameter -Wno-unused-but-set-parameter
 endif
 
 ## on some hosts, the target cross-compiler is not available so do not run this command
@@ -204,8 +195,7 @@ endif
 # A clean way of only disabling a few optimizations that
 # cause problems on devices such as Grouper
 ifeq ($(ARCH_ARM_HIGH_OPTIMIZATION_COMPAT),true)
-  TARGET_CFX_CFLAGS +=    -fno-tree-vectorize \
-                          -fno-aggressive-loop-optimizations
+  TARGET_CFX_CFLAGS +=    -fno-tree-vectorize
 endif
 
 # Use -O2 for TARGET_arm_CFLAGS for the following devices due to
@@ -225,12 +215,6 @@ endif
 # BUILD_RECORD_COMPILATION_INFO_IN_ELF is set
 ifneq ($(strip $(BUILD_RECORD_COMPILATION_INFO_IN_ELF)),)
   TARGET_CFX_CFLAGS += -frecord-compilation-info-in-elf
-endif
-
-# Disable very common warnings on newer (4.8.y+) toolchains
-ifeq ($(strip $(BUILD_SHOW_NEW_COMMON_WARNINGS)),)
-  TARGET_CFX_CFLAGS += -Wno-unused-parameter -Wno-sign-compare \
-                       -Wno-unused-but-set-parameter
 endif
 
 ifeq ($(TARGET_QCOM_DISPLAY_VARIANT),legacy)

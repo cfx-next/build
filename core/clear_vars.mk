@@ -143,6 +143,9 @@ LOCAL_POST_INSTALL_CMD:=
 LOCAL_DIST_BUNDLED_BINARIES:=
 LOCAL_NO_SYNTAX_CHECK:=
 LOCAL_NO_STATIC_ANALYZER:=
+LOCAL_CFX_CLANG:=
+LOCAL_GCC:=
+LOCAL_NO_POLLY_OPT_SUPPORT:=
 
 # Trim MAKEFILE_LIST so that $(call my-dir) doesn't need to
 # iterate over thousands of entries every time.

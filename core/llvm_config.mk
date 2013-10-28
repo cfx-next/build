@@ -1,7 +1,17 @@
+ifeq ($(strip $(TARGET_CFX_CLANG_PREFIX)),)
+  TARGET_CFX_CLANG_ROOT := prebuilts/clang/linux-x86/3.4
+  TARGET_CFX_CLANG_PREFIX := $(TARGET_CFX_CLANG_ROOT)/bin
+endif
+
 CLANG := $(HOST_OUT_EXECUTABLES)/clang$(HOST_EXECUTABLE_SUFFIX)
 CLANG_CXX := $(HOST_OUT_EXECUTABLES)/clang++$(HOST_EXECUTABLE_SUFFIX)
 LLVM_AS := $(HOST_OUT_EXECUTABLES)/llvm-as$(HOST_EXECUTABLE_SUFFIX)
 LLVM_LINK := $(HOST_OUT_EXECUTABLES)/llvm-link$(HOST_EXECUTABLE_SUFFIX)
+
+CFX_CLANG := $(TARGET_CFX_CLANG_PREFIX)/clang
+CFX_CLANG_CXX := $(TARGET_CFX_CLANG_PREFIX)/clang++
+CFX_LLVM_AS := $(TARGET_CFX_CLANG_PREFIX)/llvm-as
+CFX_LLVM_LINK := $(TARGET_CFX_CLANG_PREFIX)/llvm-link
 
 define do-clang-flags-subst
   TARGET_GLOBAL_CLANG_FLAGS := $(subst $(1),$(2),$(TARGET_GLOBAL_CLANG_FLAGS))
@@ -14,10 +24,16 @@ endef
 
 
 CLANG_CONFIG_EXTRA_CFLAGS := \
-  -D__compiler_offsetof=__builtin_offsetof \
+  -D__compiler_offsetof=__builtin_offsetof
+
+CFX_CLANG_CONFIG_EXTRA_CFLAGS := \
+  -O3 \
+  -Qignore-c-std-not-allowed-with-cplusplus \
+  -D__compiler_offsetof=__builtin_offsetof
 
 CLANG_CONFIG_UNKNOWN_CFLAGS := \
   -fipa-cp-clone \
+  -finline-limit=64 \
   -foptimize-sincos \
   -fpredictive-commoning \
   -fsched-spec-load \
@@ -27,8 +43,18 @@ CLANG_CONFIG_UNKNOWN_CFLAGS := \
   -fvect-cost-model \
   -march=armv7-a \
   -march=armv7-a-neon \
+  -mvectorize-with-neon-quad \
   -Wstrict-aliasing=3 \
-  -Wno-unused-but-set-parameter
+  -Wno-unused-but-set-parameter \
+  -fno-if-conversion \
+  -fno-inline-functions-called-once \
+  -fvect-cost-model=dynamic \
+  -ftree-loop-distribution \
+  -ftree-loop-linear \
+  -fpredictive-commoning \
+  -fstrict-volatile-bitfields \
+  -fno-align-jumps \
+  -Wno-psabi
 
 ifeq ($(TARGET_ARCH),arm)
   RS_TRIPLE := armv7-none-linux-gnueabi
@@ -36,6 +62,14 @@ ifeq ($(TARGET_ARCH),arm)
     -target arm-linux-androideabi \
     -nostdlibinc \
     -B$(TARGET_TOOLCHAIN_ROOT)/arm-linux-androideabi/bin
+  CFX_CLANG_CONFIG_EXTRA_CFLAGS += \
+    $(CLANG_CONFIG_EXTRA_ASFLAGS) \
+    -fPIC \
+    -mfloat-abi=softfp \
+    -fno-short-enums \
+    -D__ARM_FEATURE_DSP=1 \
+    -mllvm -arm-enable-ehabi \
+    -arm-enable-ehabi-descriptors 
   CLANG_CONFIG_EXTRA_CFLAGS += \
     $(CLANG_CONFIG_EXTRA_ASFLAGS) \
     -mllvm -arm-enable-ehabi
@@ -113,7 +147,7 @@ endif
 
 
 CLANG_CONFIG_EXTRA_TARGET_C_INCLUDES := external/clang/lib/include $(TARGET_OUT_HEADERS)/clang
-
+CFX_CLANG_CONFIG_EXTRA_TARGET_C_INCLUDES := $(TARGET_CFX_CLANG_ROOT)/lib/clang/3.4/include
 # remove unknown flags to define CLANG_FLAGS
 TARGET_GLOBAL_CLANG_FLAGS += $(filter-out $(CLANG_CONFIG_UNKNOWN_CFLAGS),$(TARGET_GLOBAL_CFLAGS))
 HOST_GLOBAL_CLANG_FLAGS += $(filter-out $(CLANG_CONFIG_UNKNOWN_CFLAGS),$(HOST_GLOBAL_CFLAGS))

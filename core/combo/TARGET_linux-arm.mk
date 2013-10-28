@@ -42,36 +42,18 @@ ifeq ($(strip $(TARGET_GCC_VERSION_EXP)),)
   endif
 endif
 
-# TODO: come up with a better way of setting these values for codefirex variant (vendor).
-ifeq ($(strip $(TARGET_CLANG_VERSION_EXP)),)
-  ifeq ($(TARGET_BUILD_VARIANT),codefirex)
-    TARGET_CLANG_VERSION_EXP := 3.4
-  endif
-endif
-
-ifeq ($(TARGET_BUILD_TYPE),experimental)
-  ifeq ($(strip $(TARGET_TOOLS_PREFIX)),)
-    TARGET_TOOLS_PREFIX := prebuilts/clang/linux-x86/3.4/bin/arm-linux-androideabi-
-  endif
-endif
-
-# You can set TARGET_TOOLS_PREFIX to get the toolchain from somewhere else
+# You can set TARGET_TOOLS_PREFIX to get gcc from somewhere else
 ifeq ($(strip $(TARGET_TOOLS_PREFIX)),)
   TARGET_TOOLCHAIN_ROOT := prebuilts/gcc/$(HOST_PREBUILT_TAG)/arm/arm-linux-androideabi-$(TARGET_GCC_VERSION)
   TARGET_TOOLS_PREFIX := $(TARGET_TOOLCHAIN_ROOT)/bin/arm-linux-androideabi-
 endif
 
-TARGET_arm_CFLAGS :=    -fgcse-after-reload \
-                        -fipa-cp-clone \
-                        -fpredictive-commoning \
-                        -fsched-spec-load \
-                        -funroll-loops \
+TARGET_arm_CFLAGS :=    -funroll-loops \
                         -ftree-loop-distribution \
                         -ftree-loop-linear \
-                        -fvect-cost-model=dynamic \
                         -fomit-frame-pointer \
                         -fstrict-aliasing \
-                        -Wstrict-aliasing=3 \
+                        -Wstrict-aliasing=2 \
                         -Werror=strict-aliasing
 
 # Modules can choose to compile some source as thumb.
@@ -80,10 +62,7 @@ TARGET_thumb_CFLAGS :=  -mthumb \
                         -fstrict-aliasing \
                         -Wstrict-aliasing=2 \
                         -Werror=strict-aliasing \
-                        -fgcse-after-reload \
-                        -fsched-spec-load \
                         -funroll-loops \
-                        -fipa-cp-clone \
                         -pipe
 
 include $(BUILD_COMBOS)/TARGET_linux.mk
@@ -117,8 +96,6 @@ TARGET_GLOBAL_LDFLAGS += \
 			-Wl,--warn-shared-textrel \
 			$(arch_variant_ldflags)
 
-TARGET_GLOBAL_CFLAGS += -mthumb-interwork
-
 TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
 
 # More flags/options can be added here
@@ -126,10 +103,7 @@ TARGET_RELEASE_CFLAGS += \
 			-DNDEBUG \
 			-g \
 			-Wstrict-aliasing=2 \
-			-Werror=strict-aliasing \
-			-fgcse-after-reload \
-			-frerun-cse-after-loop \
-			-frename-registers
+			-Werror=strict-aliasing
 
 TARGET_C_INCLUDES := \
 	$(libc_root)/arch-arm/include \
