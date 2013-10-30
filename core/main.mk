@@ -195,6 +195,7 @@ endif
 # Check for LLVM Polly dependencies
 # LLVM Polly requires CLooG 0.18.1 and ISL 0.12.1 (included in Cloog 0.18.1)
 ifeq ($(shell cloog --version 2>&1 | head -n 1 | grep '^CLooG 0.18.1'),)
+ifeq ($(shell cloog-isl --version 2>&1 | head -n 1 | grep '^CLooG 0.18.1'),)
 $(warning ********************************************************************************)
 $(warning *  codefireXperiment building requires CLooG 0.18.1 and ISL 0.12.1.)
 $(warning *  ISL 0.12.1 is included in CLooG 0.18.1 by default.)
@@ -205,6 +206,7 @@ $(warning *  We also have CLooG 0.18.1 source in the following path:)
 $(warning *  $(ANDROID_BUILD_TOP)/toolchain/src/cloog)
 $(warning ********************************************************************************)
 $(error stopping)
+endif
 endif
 
 ifeq (darwin,$(HOST_OS))
