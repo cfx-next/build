@@ -112,7 +112,9 @@ PRODUCT_PACKAGES += \
     libicuuc \
     libjavacore \
     libkeystore \
+    liblz4 \
     libmdnssd \
+    libminiz \
     libnativehelper \
     libnfc_ndef \
     libportable \
@@ -142,8 +144,8 @@ PRODUCT_PACKAGES += \
     libwebrtc_audio_preprocessing \
     libwilhelm \
     libz \
+    lz4c \
     mdnsd \
-    libminiz \
     network \
     okhttp \
     pand \

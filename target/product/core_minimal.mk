@@ -71,13 +71,15 @@ PRODUCT_PACKAGES += \
     libicui18n \
     libicuuc \
     libjavacore \
+    liblz4 \
+    libminiz \
     libnativehelper \
     libsqlite_jni \
     libssl \
     libwilhelm \
     libz \
+    lz4c \
     make_ext4fs \
-    libminiz \
     screencap \
     sensorservice \
     uiautomator

@@ -104,8 +104,10 @@ PRODUCT_PACKAGES += \
     libwilhelm \
     libz \
     make_ext4fs \
+    liblz4 \
     libminiz \
     lrzsz \
+    lz4c \
     mdnsd \
     mms-common \
     okhttp \
