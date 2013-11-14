@@ -1,5 +1,5 @@
 ifeq ($(strip $(TARGET_CFX_CLANG_PREFIX)),)
-  TARGET_CFX_CLANG_ROOT := prebuilts/clang/linux-x86/3.4
+  TARGET_CFX_CLANG_ROOT := prebuilts/clang/linux-x86/$(TARGET_CFX_CLANG_VERSION)
   TARGET_CFX_CLANG_PREFIX := $(TARGET_CFX_CLANG_ROOT)/bin
 endif
 
@@ -55,6 +55,37 @@ CLANG_CONFIG_UNKNOWN_CFLAGS := \
   -fstrict-volatile-bitfields \
   -fno-align-jumps \
   -Wno-psabi
+
+ifeq ($(TARGET_ARCH),aarch64)
+  RS_TRIPLE := aarch64-none-linux-gnu
+  CLANG_CONFIG_EXTRA_ASFLAGS += \
+    -target aarch64-linux-gnu \
+    -nostdlibinc \
+    -B$(TARGET_TOOLCHAIN_ROOT)/aarch64-linux-android/bin
+  CFX_CLANG_CONFIG_EXTRA_CFLAGS += \
+    $(CLANG_CONFIG_EXTRA_ASFLAGS) \
+    -fPIC \
+    -mfloat-abi=softfp \
+    -fno-short-enums \
+    -D__ANDROID__ \
+    -mllvm -arm-enable-ehabi \
+    -arm-enable-ehabi-descriptors 
+  CLANG_CONFIG_EXTRA_CFLAGS += \
+    $(CLANG_CONFIG_EXTRA_ASFLAGS) \
+    -mllvm -arm-enable-ehabi
+  CLANG_CONFIG_EXTRA_LDFLAGS += \
+    -target aarch64-linux-gnu \
+    -B$(TARGET_TOOLCHAIN_ROOT)/aarch64-linux-android/bin
+  CLANG_CONFIG_UNKNOWN_CFLAGS += \
+    -mthumb-interwork \
+    -fgcse-after-reload \
+    -frerun-cse-after-loop \
+    -frename-registers \
+    -fno-builtin-sin \
+    -fno-strict-volatile-bitfields \
+    -fno-align-jumps \
+    -Wa,--noexecstack
+endif
 
 ifeq ($(TARGET_ARCH),arm)
   RS_TRIPLE := armv7-none-linux-gnueabi

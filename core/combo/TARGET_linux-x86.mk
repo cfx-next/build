@@ -28,6 +28,12 @@ else
 TARGET_GCC_VERSION := $(TARGET_GCC_VERSION_EXP)
 endif
 
+ifeq ($(strip $(TARGET_CFX_CLANG_VERSION_EXP)),)
+  TARGET_CFX_CLANG_VERSION := 3.4
+else
+  TARGET_CFX_CLANG_VERSION := $(TARGET_CFX_CLANG_VERSION_EXP)
+endif
+
 # Include the arch-variant-specific configuration file.
 # Its role is to define various ARCH_X86_HAVE_XXX feature macros,
 # plus initial values for TARGET_GLOBAL_CFLAGS

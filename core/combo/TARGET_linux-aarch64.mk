@@ -40,13 +40,16 @@ else
 TARGET_GCC_VERSION := $(TARGET_GCC_VERSION_EXP)
 endif
 
+ifeq ($(strip $(TARGET_CFX_CLANG_VERSION_EXP)),)
+  TARGET_CFX_CLANG_VERSION := 3.4
+else
+  TARGET_CFX_CLANG_VERSION := $(TARGET_CFX_CLANG_VERSION_EXP)
+endif
+
 TARGET_ARCH_SPECIFIC_MAKEFILE := $(BUILD_COMBOS)/arch/$(TARGET_ARCH)/$(TARGET_ARCH_VARIANT).mk
 ifeq ($(strip $(wildcard $(TARGET_ARCH_SPECIFIC_MAKEFILE))),)
 $(error Unknown ARM architecture version: $(TARGET_ARCH_VARIANT))
 endif
-
-# TODO: Enable Clang when aarch64 prebuilt is added
-WITHOUT_CLANG := true
 
 include $(TARGET_ARCH_SPECIFIC_MAKEFILE)
 
