@@ -18,7 +18,9 @@
 # Included by combo/combo/TARGET_$(TARGET_ARCH).mk
 
 
+#
 # Define FDO (Feedback Directed Optimization) options.
+#
 
 ifneq ($(strip $(BUILD_FDO_INSTRUMENT)),)
   # Set BUILD_FDO_INSTRUMENT=true to turn on FDO instrumentation.
@@ -41,4 +43,22 @@ else
     TARGET_FDO_CFLAGS := -fprofile-use=$(TARGET_FDO_PROFILE_PATH) -DANDROID_FDO
     TARGET_FDO_LIB := $(target_libgcov)
   endif
+endif
+
+#
+# Define sample based PGO (Profile Guided Optimization) options
+#
+
+# Support setting TARGET_PGO_PROFILE_PATH to a custom profile directory for your build.
+ifeq ($(strip $(TARGET_PGO_PROFILE_PATH)),)
+  TARGET_PGO_PROFILE_PATH := pgo/profiles/$(TARGET_ARCH)/$(TARGET_ARCH_VARIANT)
+else
+  ifeq ($(strip $(wildcard $(TARGET_PGO_PROFILE_PATH))),)
+    $(warning Custom TARGET_PGO_PROFILE_PATH supplied, but directory is not accessible. Disabling PGO.)
+  endif
+endif
+
+# If the PGO profile directory can't be found, then FDO is off.
+ifneq ($(strip $(wildcard $(TARGET_PGO_PROFILE_PATH))),)
+  TARGET_PGO_CFLAGS := -fprofile-sample-use=$(TARGET_PGO_PROFILE_PATH)
 endif

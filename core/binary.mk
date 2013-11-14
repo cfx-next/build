@@ -209,6 +209,19 @@ ifeq ($(strip $(WITHOUT_CLANG)),)
 endif
 
 ####################################################
+## Add PGO flags if PGO is turned on and supported
+####################################################
+ifneq ($(strip $(LOCAL_PGO_SUPPORT)),)
+  ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+    ifeq ($(strip $(LOCAL_CFX_CLANG)),)
+      LOCAL_CFLAGS += $(TARGET_PGO_CFLAGS)
+      LOCAL_CPPFLAGS += $(TARGET_PGO_CFLAGS)
+      LOCAL_LDFLAGS += $(TARGET_PGO_CFLAGS)
+    endif
+  endif
+endif
+
+####################################################
 ## Add cfX flags if codefirex build variant
 ####################################################
 ifeq ($(TARGET_BUILD_VARIANT),codefirex)
