@@ -58,7 +58,7 @@ else
   endif
 endif
 
-# If the PGO profile directory can't be found, then FDO is off.
+# If the PGO profile directory can't be found, then PGO is off.
 ifneq ($(strip $(wildcard $(TARGET_PGO_PROFILE_PATH))),)
   TARGET_PGO_CFLAGS := -fprofile-sample-use=$(TARGET_PGO_PROFILE_PATH)
 endif
