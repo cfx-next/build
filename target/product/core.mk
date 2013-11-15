@@ -111,6 +111,7 @@ PRODUCT_PACKAGES += \
     mdnsd \
     mms-common \
     okhttp \
+    perf \
     requestsync \
     telephony-common \
     voip-common \

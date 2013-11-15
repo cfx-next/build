@@ -149,6 +149,7 @@ PRODUCT_PACKAGES += \
     network \
     okhttp \
     pand \
+    perf \
     requestsync \
     screencap \
     sdptool \

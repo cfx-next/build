@@ -80,6 +80,7 @@ PRODUCT_PACKAGES += \
     libz \
     lz4c \
     make_ext4fs \
+    perf \
     screencap \
     sensorservice \
     uiautomator
