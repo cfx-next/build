@@ -156,6 +156,11 @@ LOCAL_ASFLAGS += -D__ASSEMBLY__
 ifdef LOCAL_SDK_VERSION
 my_target_project_includes :=
 my_target_c_includes := $(my_ndk_stl_include_path) $(my_ndk_version_root)/usr/include
+
+# filter out including of AndroidConfig.h in system/core.
+TARGET_GLOBAL_CFLAGS_NO_ANDCONF ?= $(subst $(TARGET_ANDROID_CONFIG_CFLAGS),,\
+    $(TARGET_GLOBAL_CFLAGS))
+my_target_global_cflags := $(TARGET_GLOBAL_CFLAGS_NO_ANDCONF)
 else
 my_target_project_includes := $(TARGET_PROJECT_INCLUDES)
 my_target_c_includes := $(TARGET_C_INCLUDES)
@@ -632,7 +637,7 @@ endif
 
 # some rules depend on asm_objects being first.  If your code depends on
 # being first, it's reasonable to require it to be assembly
-normal_objects := \
+all_objects := \
     $(asm_objects) \
     $(cpp_objects) \
     $(gen_cpp_objects) \
@@ -643,9 +648,13 @@ normal_objects := \
     $(yacc_objects) \
     $(lex_objects) \
     $(proto_generated_objects) \
-    $(addprefix $(TOPDIR)$(LOCAL_PATH)/,$(LOCAL_PREBUILT_OBJ_FILES))
+    $(addprefix $(TOPDIR)$(LOCAL_PATH)/,$(LOCAL_PREBUILT_OBJ_FILES)) \
+    $(gen_o_objects)
 
-all_objects := $(normal_objects) $(gen_o_objects)
+## Allow a device's own headers to take precedence over global ones
+ifneq ($(TARGET_SPECIFIC_HEADER_PATH),)
+LOCAL_C_INCLUDES := $(TOPDIR)$(TARGET_SPECIFIC_HEADER_PATH) $(LOCAL_C_INCLUDES)
+endif
 
 LOCAL_C_INCLUDES += $(TOPDIR)$(LOCAL_PATH) $(intermediates)
 
@@ -653,12 +662,9 @@ ifndef LOCAL_SDK_VERSION
   LOCAL_C_INCLUDES += $(JNI_H_INCLUDE)
 endif
 
-# all_objects includes gen_o_objects which were part of LOCAL_GENERATED_SOURCES;
-# use normal_objects here to avoid creating circular dependencies. This assumes
-# that custom build rules which generate .o files don't consume other generated
-# sources as input (or if they do they take care of that dependency themselves).
-$(normal_objects) : | $(LOCAL_GENERATED_SOURCES)
-$(all_objects) : | $(import_includes)
+# .o files need to be filtered out of LOCAL_GENERATED_SOURCES
+# to avoid creating circular dependencies.
+$(all_objects) : | $(filter-out %.o,$(LOCAL_GENERATED_SOURCES)) $(import_includes)
 ALL_C_CPP_ETC_OBJECTS += $(all_objects)
 
 ###########################################################

@@ -59,11 +59,12 @@ TARGET_AR := $(TARGET_TOOLS_PREFIX)ar$(HOST_EXECUTABLE_SUFFIX)
 TARGET_OBJCOPY := $(TARGET_TOOLS_PREFIX)objcopy$(HOST_EXECUTABLE_SUFFIX)
 TARGET_LD := $(TARGET_TOOLS_PREFIX)ld$(HOST_EXECUTABLE_SUFFIX)
 TARGET_STRIP := $(TARGET_TOOLS_PREFIX)strip$(HOST_EXECUTABLE_SUFFIX)
-ifeq ($(TARGET_BUILD_VARIANT),user)
-    TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-all $< -o $@
+no_debug_variant := $(filter user codefirex,$(TARGET_BUILD_VARIANT))
+ifneq (,$(no_debug_variant))
+  TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-debug $< -o $@
 else
-    TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-all $< -o $@ && \
-        $(TARGET_OBJCOPY) --add-gnu-debuglink=$< $@
+  TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-debug $< -o $@ && \
+                         $(TARGET_OBJCOPY) --add-gnu-debuglink=$< $@
 endif
 
 TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
@@ -93,8 +94,6 @@ ifeq ($(FORCE_ARM_DEBUGGING),true)
   TARGET_thumb_CFLAGS += -marm -fno-omit-frame-pointer
 endif
 
-android_config_h := $(call select-android-config-h,linux-arm)
-
 TARGET_GLOBAL_CFLAGS += \
 			-msoft-float -fpic -fPIE \
 			-ffunction-sections \
@@ -105,9 +104,11 @@ TARGET_GLOBAL_CFLAGS += \
 			-Werror=format-security \
 			-D_FORTIFY_SOURCE=2 \
 			-fno-short-enums \
-			$(arch_variant_cflags) \
-			-include $(android_config_h) \
-			-I $(dir $(android_config_h))
+			$(arch_variant_cflags)
+
+android_config_h := $(call select-android-config-h,linux-arm)
+TARGET_ANDROID_CONFIG_CFLAGS := -include $(android_config_h) -I $(dir $(android_config_h))
+TARGET_GLOBAL_CFLAGS += $(TARGET_ANDROID_CONFIG_CFLAGS)
 
 # The "-Wunused-but-set-variable" option often breaks projects that enable
 # "-Wall -Werror" due to a commom idiom "ALOGV(mesg)" where ALOGV is turned

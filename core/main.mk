@@ -40,15 +40,13 @@ endif
 # Check for broken versions of make.
 # (Allow any version under Cygwin since we don't actually build the platform there.)
 ifeq (,$(findstring CYGWIN,$(shell uname -sm)))
-ifeq (0,$(shell expr $$(echo $(MAKE_VERSION) | sed "s/[^0-9\.].*//") = 3.81))
-ifeq (0,$(shell expr $$(echo $(MAKE_VERSION) | sed "s/[^0-9\.].*//") = 3.82))
+ifneq (1,$(strip $(shell expr $(MAKE_VERSION) \>= 3.81)))
 $(warning ********************************************************************************)
 $(warning *  You are using version $(MAKE_VERSION) of make.)
-$(warning *  Android can only be built by versions 3.81 and 3.82.)
+$(warning *  Android can only be built by versions 3.81 and higher.)
 $(warning *  see https://source.android.com/source/download.html)
 $(warning ********************************************************************************)
 $(error stopping)
-endif
 endif
 endif
 
@@ -71,22 +69,6 @@ $(DEFAULT_GOAL):
 .PHONY: FORCE
 FORCE:
 
-# These goals don't need to collect and include Android.mks/CleanSpec.mks
-# in the source tree.
-dont_bother_goals := clean clobber dataclean installclean \
-    help out \
-    snod systemimage-nodeps \
-    stnod systemtarball-nodeps \
-    userdataimage-nodeps userdatatarball-nodeps \
-    cacheimage-nodeps \
-    vendorimage-nodeps \
-    ramdisk-nodeps \
-    bootimage-nodeps
-
-ifneq ($(filter $(dont_bother_goals), $(MAKECMDGOALS)),)
-dont_bother := true
-endif
-
 # Targets that provide quick help on the build system.
 include $(BUILD_SYSTEM)/help.mk
 
@@ -99,6 +81,21 @@ include $(BUILD_SYSTEM)/config.mk
 # file does the rm -rf inline so the deps which are all done below will
 # be generated correctly
 include $(BUILD_SYSTEM)/cleanbuild.mk
+
+# These targets are going to delete stuff, don't bother including
+# the whole directory tree if that's all we're going to do
+ifeq ($(MAKECMDGOALS),clean)
+dont_bother := true
+endif
+ifeq ($(MAKECMDGOALS),clobber)
+dont_bother := true
+endif
+ifeq ($(MAKECMDGOALS),dataclean)
+dont_bother := true
+endif
+ifeq ($(MAKECMDGOALS),installclean)
+dont_bother := true
+endif
 
 # Include the google-specific config
 -include vendor/google/build/config.mk
@@ -140,66 +137,54 @@ $(warning ************************************************************)
 $(error Directory names containing spaces not supported)
 endif
 
-# Check for the current jdk
-ifneq ($(EXPERIMENTAL_USE_JAVA7_OPENJDK),)
-# The user asked for java7 openjdk, so check that the host
-# java version is really openjdk
-ifeq ($(shell java -version 2>&1 | grep -i openjdk),)
-$(info ************************************************************)
-$(info You asked for an OpenJDK 7 build but your version is)
-$(info $(shell java -version 2>&1 | head -n 2).)
-$(info ************************************************************)
-$(error stop)
-endif # java version is not OpenJdk
-else # if EXPERIMENTAL_USE_JAVA7_OPENJDK
-ifneq ($(shell java -version 2>&1 | grep -i openjdk),)
-$(info ************************************************************)
-$(info You are attempting to build with an unsupported JDK.)
-$(info $(space))
-$(info You use OpenJDK but only Sun/Oracle JDK is supported.)
-$(info Please follow the machine setup instructions at)
-$(info $(space)$(space)$(space)$(space)https://source.android.com/source/download.html)
-$(info ************************************************************)
-$(error stop)
-endif # java version is not Sun Oracle JDK
-endif # if EXPERIMENTAL_USE_JAVA7_OPENJDK
+# Check for the corrent jdk
+#ifneq ($(shell java -version 2>&1 | grep -i openjdk),)
+#$(info ************************************************************)
+#$(info You are attempting to build with an unsupported JDK.)
+#$(info $(space))
+#$(info You use OpenJDK but only Sun/Oracle JDK is supported.)
+#$(info Please follow the machine setup instructions at)
+#$(info $(space)$(space)$(space)$(space)https://source.android.com/source/download.html)
+#$(info ************************************************************)
+#$(error stop)
+#endif
 
-# Check for the correct version of java, should be 1.7 if
-# EXPERIMENTAL_USE_JAVA7_OPENJDK is set, 1.6 otherwise.
-ifneq ($(EXPERIMENTAL_USE_JAVA7_OPENJDK),)
-required_version := "OpenJDK 1.7"
-required_javac_version := "1.7"
-java_version := $(shell java -version 2>&1 | head -n 1 | grep '^java .*[ "]1\.7[\. "$$]')
-javac_version := $(shell javac -version 2>&1 | head -n 1 | grep '[ "]1\.7[\. "$$]')
-else # if EXPERIMENTAL_USE_JAVA7_OPENJDK
-required_version := "JavaSE 1.6"
-required_javac_version := "1.6"
-java_version := $(shell java -version 2>&1 | head -n 1 | grep '^java .*[ "]1\.6[\. "$$]')
-javac_version := $(shell javac -version 2>&1 | head -n 1 | grep '[ "]1\.6[\. "$$]')
-endif # if EXPERIMENTAL_USE_JAVA7_OPENJDK
+# Check for the correct version of java
+java_version := $(shell java -version 2>&1 | head -n 1 | grep '^java .*[ "]1\.[67][\. "$$]')
+ifneq ($(shell java -version 2>&1 | grep -i openjdk),)
+$(warning ************************************************************)
+$(warning AOSP errors out when using OpenJDK, saying you need to use)
+$(warning Java SE 1.6 instead.)
+$(warning A build with OpenJDK seems to work fine though - if you)
+$(warning run into any Java errors, you may want to try using the)
+$(warning version required by AOSP though.)
+$(warning ************************************************************)
+#java_version :=
+endif
 
 ifeq ($(strip $(java_version)),)
 $(info ************************************************************)
-$(info You are attempting to build with the incorrect version)
-$(info of java.)
+$(info You are attempting to build with the unsupported version of java.)
 $(info $(space))
 $(info Your version is: $(shell java -version 2>&1 | head -n 1).)
-$(info The required version is: $(required_version))
+$(info The officially AOSP supported version is: Java SE 1.6.)
 $(info $(space))
-$(info Please follow the machine setup instructions at)
+$(info Linaro builds with java version "1.7.0_09" seems to work fine though.)
+$(info AOSP supported machine setup instructions are at)
 $(info $(space)$(space)$(space)$(space)https://source.android.com/source/download.html)
 $(info ************************************************************)
-$(error stop)
+#$(error stop)
 endif
 
 # Check for the correct version of javac
+javac_version := $(shell javac -version 2>&1 | head -n 1 | grep '[ "]1\.[67][\. "$$]')
 ifeq ($(strip $(javac_version)),)
 $(info ************************************************************)
 $(info You are attempting to build with the incorrect version)
 $(info of javac.)
 $(info $(space))
 $(info Your version is: $(shell javac -version 2>&1 | head -n 1).)
-$(info The required version is: $(required_javac_version))
+$(info The correct version is: 1.6 or 1.7.)
 $(info $(space))
 $(info Please follow the machine setup instructions at)
 $(info $(space)$(space)$(space)$(space)https://source.android.com/source/download.html)
@@ -207,7 +192,6 @@ $(info ************************************************************)
 $(error stop)
 endif
 
-ifndef BUILD_EMULATOR
 ifeq (darwin,$(HOST_OS))
 GCC_REALPATH = $(realpath $(shell which $(HOST_CC)))
 ifneq ($(findstring llvm-gcc,$(GCC_REALPATH)),)
@@ -224,11 +208,10 @@ endif
 else   # HOST_OS is not darwin
   BUILD_EMULATOR := true
 endif  # HOST_OS is darwin
-endif
 
 $(shell echo 'VERSIONS_CHECKED := $(VERSION_CHECK_SEQUENCE_NUMBER)' \
         > $(OUT_DIR)/versions_checked.mk)
-$(shell echo 'BUILD_EMULATOR ?= $(BUILD_EMULATOR)' \
+$(shell echo 'BUILD_EMULATOR := $(BUILD_EMULATOR)' \
         >> $(OUT_DIR)/versions_checked.mk)
 endif
 
@@ -261,13 +244,16 @@ endif
 # Bring in standard build system definitions.
 include $(BUILD_SYSTEM)/definitions.mk
 
+# Bring in Qualcomm helper macros
+include $(BUILD_SYSTEM)/qcom_utils.mk
+
 # Bring in dex_preopt.mk
 include $(BUILD_SYSTEM)/dex_preopt.mk
 
-ifneq ($(filter user userdebug eng,$(MAKECMDGOALS)),)
+ifneq ($(filter user userdebug eng codefirex,$(MAKECMDGOALS)),)
 $(info ***************************************************************)
 $(info ***************************************************************)
-$(info Do not pass '$(filter user userdebug eng,$(MAKECMDGOALS))' on \
+$(info Do not pass '$(filter user userdebug eng codefirex,$(MAKECMDGOALS))' on \
        the make command line.)
 $(info Set TARGET_BUILD_VARIANT in buildspec.mk, or use lunch or)
 $(info choosecombo.)
@@ -345,13 +331,27 @@ ifneq (,$(user_variant))
   ADDITIONAL_DEFAULT_PROPERTIES += ro.allow.mock.location=0
 
 else # !user_variant
-  # Turn on checkjni for non-user builds.
-  ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=1
   # Set device insecure for non-user builds.
   ADDITIONAL_DEFAULT_PROPERTIES += ro.secure=0
-  # Allow mock locations by default for non user builds
+  # Allow mock locations by default for non user builds.
   ADDITIONAL_DEFAULT_PROPERTIES += ro.allow.mock.location=1
-endif # !user_variant
+  ## codefirex ##
+  ifeq ($(TARGET_BUILD_VARIANT),codefirex)
+    # Pick up useful tools and codefirex additions
+    tags_to_install += debug codefirex
+    # Ensure codefirex builds are easier to debug.
+    enable_target_debugging := true
+	# Enable Dalvik lock contention logging for codefirex builds.
+    ADDITIONAL_BUILD_PROPERTIES += dalvik.vm.lockprof.threshold=500
+    # Ensure checkjni is disabled for codefirex builds.
+    ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=0
+    # Disable strict mode for codefirex builds.
+    ADDITIONAL_DEFAULT_PROPERTIES += persist.sys.strictmode.disable=true
+  else # codefirex TARGET_BUILD_VARIANT
+  # Turn on checkjni for non-user builds.
+  ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=1
+  endif # !codefirex TARGET_BUILD_VARIANT
+endif # !user_variant TARGET_BUILD_VARIANT
 
 ifeq (true,$(strip $(enable_target_debugging)))
   # Target is more debuggable and adbd is on by default
@@ -372,8 +372,8 @@ ifneq ($(filter ro.setupwizard.mode=ENABLED, $(call collapse-pairs, $(ADDITIONAL
   ADDITIONAL_BUILD_PROPERTIES := $(filter-out ro.setupwizard.mode=%,\
           $(call collapse-pairs, $(ADDITIONAL_BUILD_PROPERTIES))) \
           ro.setupwizard.mode=OPTIONAL
-endif
-endif
+endif # !ro.setupwizard.mode=ENABLED
+endif # eng
 
 ## sdk ##
 
@@ -383,7 +383,7 @@ ifdef is_sdk_build
 sdk_repo_goal := $(strip $(filter sdk_repo,$(MAKECMDGOALS)))
 MAKECMDGOALS := $(strip $(filter-out sdk_repo,$(MAKECMDGOALS)))
 
-ifneq ($(words $(filter-out $(INTERNAL_MODIFIER_TARGETS) checkbuild,$(MAKECMDGOALS))),1)
+ifneq ($(words $(filter-out $(INTERNAL_MODIFIER_TARGETS),$(MAKECMDGOALS))),1)
 $(error The 'sdk' target may not be specified with any other targets)
 endif
 
@@ -440,6 +440,8 @@ $(INTERNAL_MODIFIER_TARGETS): $(DEFAULT_GOAL)
 endif
 
 # Bring in all modules that need to be built.
+ifneq ($(dont_bother),true)
+
 ifeq ($(HOST_OS)-$(HOST_ARCH),darwin-ppc)
 SDK_ONLY := true
 $(info Building the SDK under darwin-ppc is actually obsolete and unsupported.)
@@ -492,15 +494,8 @@ FULL_BUILD :=
 NOTICE-HOST-%: ;
 NOTICE-TARGET-%: ;
 
-# A helper goal printing out install paths
-.PHONY: GET-INSTALL-PATH
-GET-INSTALL-PATH:
-	@$(foreach m, $(ALL_MODULES), $(if $(ALL_MODULES.$(m).INSTALLED), \
-		echo 'INSTALL-PATH: $(m) $(ALL_MODULES.$(m).INSTALLED)';))
-
 else # ONE_SHOT_MAKEFILE
 
-ifneq ($(dont_bother),true)
 #
 # Include all of the makefiles in the system
 #
@@ -508,11 +503,9 @@ ifneq ($(dont_bother),true)
 # Can't use first-makefiles-under here because
 # --mindepth=2 makes the prunes not work.
 subdir_makefiles := \
-	$(shell build/tools/findleaves.py --prune=$(OUT_DIR) --prune=.repo --prune=.git $(subdirs) Android.mk)
+	$(shell build/tools/findleaves.py --prune=out --prune=.repo --prune=.git $(subdirs) Android.mk)
 
-$(foreach mk, $(subdir_makefiles), $(info including $(mk) ...)$(eval include $(mk)))
-
-endif # dont_bother
+include $(subdir_makefiles)
 
 endif # ONE_SHOT_MAKEFILE
 
@@ -524,25 +517,35 @@ ifeq ($(stash_product_vars),true)
 endif
 
 include $(BUILD_SYSTEM)/legacy_prebuilts.mk
-ifneq ($(filter-out $(GRANDFATHERED_ALL_PREBUILT),$(strip $(notdir $(ALL_PREBUILT)))),)
-  $(warning *** Some files have been added to ALL_PREBUILT.)
-  $(warning *)
-  $(warning * ALL_PREBUILT is a deprecated mechanism that)
-  $(warning * should not be used for new files.)
-  $(warning * As an alternative, use PRODUCT_COPY_FILES in)
-  $(warning * the appropriate product definition.)
-  $(warning * build/target/product/core.mk is the product)
-  $(warning * definition used in all products.)
-  $(warning *)
-  $(foreach bad_prebuilt,$(filter-out $(GRANDFATHERED_ALL_PREBUILT),$(strip $(notdir $(ALL_PREBUILT)))),$(warning * unexpected $(bad_prebuilt) in ALL_PREBUILT))
-  $(warning *)
-  $(error ALL_PREBUILT contains unexpected files)
-endif
+#ifneq ($(filter-out $(GRANDFATHERED_ALL_PREBUILT),$(strip $(notdir $(ALL_PREBUILT)))),)
+#  $(warning *** Some files have been added to ALL_PREBUILT.)
+#  $(warning *)
+#  $(warning * ALL_PREBUILT is a deprecated mechanism that)
+#  $(warning * should not be used for new files.)
+#  $(warning * As an alternative, use PRODUCT_COPY_FILES in)
+#  $(warning * the appropriate product definition.)
+#  $(warning * build/target/product/core.mk is the product)
+#  $(warning * definition used in all products.)
+#  $(warning *)
+#  $(foreach bad_prebuilt,$(filter-out $(GRANDFATHERED_ALL_PREBUILT),$(strip $(notdir $(ALL_PREBUILT)))),$(warning * unexpected $(bad_prebuilt) in ALL_PREBUILT))
+#  $(warning *)
+#  $(error ALL_PREBUILT contains unexpected files)
+#endif
 
 # -------------------------------------------------------------------
 # All module makefiles have been included at this point.
 # -------------------------------------------------------------------
 
+# -------------------------------------------------------------------
+# Include any makefiles that must happen after the module makefiles
+# have been included.
+# TODO: have these files register themselves via a global var rather
+# than hard-coding the list here.
+ifdef FULL_BUILD
+  # Only include this during a full build, otherwise we can't be
+  # guaranteed that any policies were included.
+  -include frameworks/policies/base/PolicyConfig.mk
+endif
 
 # -------------------------------------------------------------------
 # Fix up CUSTOM_MODULES to refer to installed files rather than
@@ -645,10 +648,12 @@ tests_MODULES := $(sort \
 
 # TODO: Remove the 3 places in the tree that use ALL_DEFAULT_INSTALLED_MODULES
 # and get rid of it from this list.
+# TODO: The shell is chosen by magic.  Do we still need this?
 modules_to_install := $(sort \
     $(ALL_DEFAULT_INSTALLED_MODULES) \
     $(product_FILES) \
     $(foreach tag,$(tags_to_install),$($(tag)_MODULES)) \
+    $(call get-tagged-modules, shell_$(TARGET_SHELL)) \
     $(CUSTOM_MODULES) \
   )
 
@@ -702,6 +707,8 @@ ALL_DEFAULT_INSTALLED_MODULES := $(modules_to_install)
 include $(BUILD_SYSTEM)/Makefile
 modules_to_install := $(sort $(ALL_DEFAULT_INSTALLED_MODULES))
 ALL_DEFAULT_INSTALLED_MODULES :=
+
+endif # dont_bother
 
 
 # These are additional goals that we build, in order to make sure that there
@@ -829,7 +836,7 @@ ifneq ($(TARGET_BUILD_APPS),)
   # For uninstallable modules such as static Java library, we have to dist the built file,
   # as <module_name>.<suffix>
   apps_only_dist_built_files := $(foreach m,$(unbundled_build_modules),$(if $(ALL_MODULES.$(m).INSTALLED),,\
-      $(if $(ALL_MODULES.$(m).BUILT),$(ALL_MODULES.$(m).BUILT):$(m)$(suffix $(ALL_MODULES.$(m).BUILT)))))
+      $(ALL_MODULES.$(m).BUILT):$(m)$(suffix $(ALL_MODULES.$(m).BUILT))))
   $(call dist-for-goals,apps_only, $(apps_only_dist_built_files))
 
   ifeq ($(EMMA_INSTRUMENT),true)
@@ -838,22 +845,10 @@ ifneq ($(TARGET_BUILD_APPS),)
     $(call dist-for-goals,apps_only, $(EMMA_META_ZIP))
   endif
 
-  $(PROGUARD_DICT_ZIP) : $(apps_only_installed_files)
-  $(call dist-for-goals,apps_only, $(PROGUARD_DICT_ZIP))
-
 .PHONY: apps_only
 apps_only: $(unbundled_build_modules)
 
 droid: apps_only
-
-# Combine the NOTICE files for a apps_only build
-$(eval $(call combine-notice-files, \
-    $(target_notice_file_txt), \
-    $(target_notice_file_html), \
-    "Notices for files for apps:", \
-    $(TARGET_OUT_NOTICE_FILES), \
-    $(apps_only_installed_files)))
-
 
 else # TARGET_BUILD_APPS
   $(call dist-for-goals, droidcore, \
@@ -868,10 +863,6 @@ else # TARGET_BUILD_APPS
     $(INSTALLED_FACTORY_RAMDISK_TARGET) \
     $(INSTALLED_FACTORY_BUNDLE_TARGET) \
    )
-
-  # Put a copy of the radio/bootloader files in the dist dir.
-  $(foreach f,$(INSTALLED_RADIOIMAGE_TARGET), \
-    $(call dist-for-goals, droidcore, $(f)))
 
   ifneq ($(TARGET_BUILD_PDK),true)
     $(call dist-for-goals, droidcore, \
@@ -940,7 +931,7 @@ findbugs: $(INTERNAL_FINDBUGS_HTML_TARGET) $(INTERNAL_FINDBUGS_XML_TARGET)
 
 .PHONY: clean
 clean:
-	@rm -rf $(OUT_DIR)
+	@rm -rf $(OUT_DIR)/*
 	@echo "Entire build directory removed."
 
 .PHONY: clobber
