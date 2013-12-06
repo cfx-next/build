@@ -289,6 +289,22 @@ for these).
         <li><code>adb</code> is enabled by default.
     </td>
 </tr>
+<tr>
+    <td>
+        <code>codefirex<code>
+    </td>
+    <td>
+        "<code>make codefirex</code>"
+        <p>
+        The same as <code>userdebug</code>, except:
+        <ul>
+        <li>Also, installs modules tagged with <code>codefirex</code>.
+        <li>In addition, some modules may be modified or replaced.
+        <li>One such example is the su module which is replaced
+            with a custom su module.
+        <li><code>ro.secure=0</code>
+    </td>
+</tr>
 </table>
 
 <p>
@@ -505,6 +521,7 @@ specified here as well.</p>
         <b>TARGET_BUILD_TYPE</b><br/>
         release<br/>
         debug
+        development
     </td>
     <td valign=top align=center>
         <b>TARGET_PRODUCT</b><br/>

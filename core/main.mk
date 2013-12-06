@@ -40,15 +40,13 @@ endif
 # Check for broken versions of make.
 # (Allow any version under Cygwin since we don't actually build the platform there.)
 ifeq (,$(findstring CYGWIN,$(shell uname -sm)))
-ifeq (0,$(shell expr $$(echo $(MAKE_VERSION) | sed "s/[^0-9\.].*//") = 3.81))
-ifeq (0,$(shell expr $$(echo $(MAKE_VERSION) | sed "s/[^0-9\.].*//") = 3.82))
+ifneq (1,$(strip $(shell expr $(MAKE_VERSION) \>= 3.81)))
 $(warning ********************************************************************************)
 $(warning *  You are using version $(MAKE_VERSION) of make.)
-$(warning *  Android can only be built by versions 3.81 and 3.82.)
+$(warning *  Android can only be built by versions 3.81 and higher.)
 $(warning *  see https://source.android.com/source/download.html)
 $(warning ********************************************************************************)
 $(error stopping)
-endif
 endif
 endif
 
@@ -207,6 +205,23 @@ $(info ************************************************************)
 $(error stop)
 endif
 
+# Check for LLVM Polly dependencies
+# LLVM Polly requires CLooG 0.18.1 and ISL 0.12.1 (included in Cloog 0.18.1)
+ifeq ($(shell cloog --version 2>&1 | head -n 1 | grep '^CLooG 0.18.1'),)
+ifeq ($(shell cloog-isl --version 2>&1 | head -n 1 | grep '^CLooG 0.18.1'),)
+$(warning ********************************************************************************)
+$(warning *  codefireXperiment building requires CLooG 0.18.1 and ISL 0.12.1.)
+$(warning *  ISL 0.12.1 is included in CLooG 0.18.1 by default.)
+$(warning *  This is a requirement for utilizing LLVM Polly optimizations.)
+$(warning *  Check for your distro for the package(s) required, or install manually.)
+$(warning *  See http://www.cloog.org/)
+$(warning *  We also have CLooG 0.18.1 source in the following path:)
+$(warning *  $(ANDROID_BUILD_TOP)/toolchain/src/cloog)
+$(warning ********************************************************************************)
+$(error stopping)
+endif
+endif
+
 ifndef BUILD_EMULATOR
 ifeq (darwin,$(HOST_OS))
 GCC_REALPATH = $(realpath $(shell which $(HOST_CC)))
@@ -261,13 +276,16 @@ endif
 # Bring in standard build system definitions.
 include $(BUILD_SYSTEM)/definitions.mk
 
+# Bring in Qualcomm helper macros
+include $(BUILD_SYSTEM)/qcom_utils.mk
+
 # Bring in dex_preopt.mk
 include $(BUILD_SYSTEM)/dex_preopt.mk
 
-ifneq ($(filter user userdebug eng,$(MAKECMDGOALS)),)
+ifneq ($(filter user userdebug eng codefirex,$(MAKECMDGOALS)),)
 $(info ***************************************************************)
 $(info ***************************************************************)
-$(info Do not pass '$(filter user userdebug eng,$(MAKECMDGOALS))' on \
+$(info Do not pass '$(filter user userdebug eng codefirex,$(MAKECMDGOALS))' on \
        the make command line.)
 $(info Set TARGET_BUILD_VARIANT in buildspec.mk, or use lunch or)
 $(info choosecombo.)
@@ -345,13 +363,27 @@ ifneq (,$(user_variant))
   ADDITIONAL_DEFAULT_PROPERTIES += ro.allow.mock.location=0
 
 else # !user_variant
-  # Turn on checkjni for non-user builds.
-  ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=1
   # Set device insecure for non-user builds.
   ADDITIONAL_DEFAULT_PROPERTIES += ro.secure=0
-  # Allow mock locations by default for non user builds
+  # Allow mock locations by default for non user builds.
   ADDITIONAL_DEFAULT_PROPERTIES += ro.allow.mock.location=1
-endif # !user_variant
+  ## codefirex ##
+  ifeq ($(TARGET_BUILD_VARIANT),codefirex)
+    # Pick up useful tools and codefirex additions
+    tags_to_install += debug codefirex
+    # Ensure codefirex builds are easier to debug.
+    enable_target_debugging := true
+	# Enable Dalvik lock contention logging for codefirex builds.
+    ADDITIONAL_BUILD_PROPERTIES += dalvik.vm.lockprof.threshold=500
+    # Ensure checkjni is disabled for codefirex builds.
+    ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=0
+    # Disable strict mode for codefirex builds.
+    ADDITIONAL_DEFAULT_PROPERTIES += persist.sys.strictmode.disable=true
+  else # codefirex TARGET_BUILD_VARIANT
+  # Turn on checkjni for non-user builds.
+  ADDITIONAL_BUILD_PROPERTIES += ro.kernel.android.checkjni=1
+  endif # !codefirex TARGET_BUILD_VARIANT
+endif # !user_variant TARGET_BUILD_VARIANT
 
 ifeq (true,$(strip $(enable_target_debugging)))
   # Target is more debuggable and adbd is on by default
@@ -372,8 +404,8 @@ ifneq ($(filter ro.setupwizard.mode=ENABLED, $(call collapse-pairs, $(ADDITIONAL
   ADDITIONAL_BUILD_PROPERTIES := $(filter-out ro.setupwizard.mode=%,\
           $(call collapse-pairs, $(ADDITIONAL_BUILD_PROPERTIES))) \
           ro.setupwizard.mode=OPTIONAL
-endif
-endif
+endif # !ro.setupwizard.mode=ENABLED
+endif # eng
 
 ## sdk ##
 
@@ -524,20 +556,20 @@ ifeq ($(stash_product_vars),true)
 endif
 
 include $(BUILD_SYSTEM)/legacy_prebuilts.mk
-ifneq ($(filter-out $(GRANDFATHERED_ALL_PREBUILT),$(strip $(notdir $(ALL_PREBUILT)))),)
-  $(warning *** Some files have been added to ALL_PREBUILT.)
-  $(warning *)
-  $(warning * ALL_PREBUILT is a deprecated mechanism that)
-  $(warning * should not be used for new files.)
-  $(warning * As an alternative, use PRODUCT_COPY_FILES in)
-  $(warning * the appropriate product definition.)
-  $(warning * build/target/product/core.mk is the product)
-  $(warning * definition used in all products.)
-  $(warning *)
-  $(foreach bad_prebuilt,$(filter-out $(GRANDFATHERED_ALL_PREBUILT),$(strip $(notdir $(ALL_PREBUILT)))),$(warning * unexpected $(bad_prebuilt) in ALL_PREBUILT))
-  $(warning *)
-  $(error ALL_PREBUILT contains unexpected files)
-endif
+#ifneq ($(filter-out $(GRANDFATHERED_ALL_PREBUILT),$(strip $(notdir $(ALL_PREBUILT)))),)
+#  $(warning *** Some files have been added to ALL_PREBUILT.)
+#  $(warning *)
+#  $(warning * ALL_PREBUILT is a deprecated mechanism that)
+#  $(warning * should not be used for new files.)
+#  $(warning * As an alternative, use PRODUCT_COPY_FILES in)
+#  $(warning * the appropriate product definition.)
+#  $(warning * build/target/product/core.mk is the product)
+#  $(warning * definition used in all products.)
+#  $(warning *)
+#  $(foreach bad_prebuilt,$(filter-out $(GRANDFATHERED_ALL_PREBUILT),$(strip $(notdir $(ALL_PREBUILT)))),$(warning * unexpected $(bad_prebuilt) in ALL_PREBUILT))
+#  $(warning *)
+#  $(error ALL_PREBUILT contains unexpected files)
+#endif
 
 # -------------------------------------------------------------------
 # All module makefiles have been included at this point.
@@ -940,7 +972,7 @@ findbugs: $(INTERNAL_FINDBUGS_HTML_TARGET) $(INTERNAL_FINDBUGS_XML_TARGET)
 
 .PHONY: clean
 clean:
-	@rm -rf $(OUT_DIR)
+	@rm -rf $(OUT_DIR)/*
 	@echo "Entire build directory removed."
 
 .PHONY: clobber

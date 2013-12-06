@@ -136,12 +136,118 @@ ifneq ($(strip $(LOCAL_FDO_SUPPORT)),)
 endif
 
 ####################################################
+## Add Auto FDO flags if Auto FDO is turned on and
+## supported
+####################################################
+ifeq ($(strip $(LOCAL_NO_AUTO_FDO_SUPPORT)),)
+  ifeq ($(strip $(LOCAL_NO_FDO_SUPPORT)),)
+    ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+      LOCAL_CFLAGS += $(TARGET_AUTO_FDO_CFLAGS)
+      LOCAL_CPPFLAGS += $(TARGET_AUTO_FDO_CFLAGS)
+      LOCAL_LDFLAGS += $(TARGET_AUTO_FDO_CFLAGS)
+    endif
+  endif
+endif
+
+####################################################
 ## Add profiling flags if aprof is turned on
 ####################################################
 ifeq ($(strip $(LOCAL_ENABLE_APROF)),true)
   # -ffunction-sections and -fomit-frame-pointer are conflict with -pg
   LOCAL_CFLAGS += -fno-omit-frame-pointer -fno-function-sections -pg
   LOCAL_CPPFLAGS += -fno-omit-frame-pointer -fno-function-sections -pg
+endif
+
+####################################################
+## Add LTO flags if LTO is turned on, supported,
+# clang is not used for the module, and the module
+# is a target module
+####################################################
+ifeq ($(strip $(LOCAL_NO_LTO_SUPPORT)),)
+  ifeq ($(strip $(LOCAL_CLANG)),)
+    ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+      LOCAL_CFLAGS += $(TARGET_LTO_CFLAGS)
+      LOCAL_CPPFLAGS += $(TARGET_LTO_CFLAGS)
+      LOCAL_LDFLAGS += $(TARGET_LTO_CFLAGS)
+    endif
+  endif
+endif
+
+####################################################
+## Enable strict aliasing unless locally disabled,
+# or a non-codefirex build variant.
+####################################################
+NO_SA_CFLAGS := -fno-strict-aliasing \
+                -Wno-error=strict-aliasing
+ifneq ($(strip $(LOCAL_NO_STRICT_ALIASING_SUPPORT)),)
+  LOCAL_CFX_CFLAGS += $(NO_SA_CFLAGS)
+endif
+
+####################################################
+## Build in ISOC++11 mode with gnuism support unless
+# locally or globally disabled.
+####################################################
+ifeq ($(strip $(BUILD_DISABLE_ISOCPP11)),)
+  ifeq ($(strip $(LOCAL_NO_ISOCPP11_SUPPORT)),)
+    ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+      LOCAL_CPPFLAGS += -std=gnu++11
+    endif
+  endif
+endif
+
+####################################################
+## Enable cfX-Toolchain Clang by default unless
+# LOCAL_GCC is specified, or globally disabled
+####################################################
+ifeq ($(strip $(WITHOUT_CLANG)),)
+  ifeq ($(strip $(LOCAL_GCC)),)
+    ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+      ifeq ($(strip $(LOCAL_CLANG)),)
+        LOCAL_CFX_CLANG := true
+        LOCAL_CFLAGS += $(CFX_CLANG_CONFIG_EXTRA_CFLAGS)
+        LOCAL_ASFLAGS += $(CLANG_CONFIG_EXTRA_ASFLAGS)
+        LOCAL_LDFLAGS += $(CLANG_CONFIG_EXTRA_LDFLAGS)
+        ifeq ($(strip $(BUILD_DISABLE_POLLY_OPT)),)
+          ifeq ($(strip $(LOCAL_NO_POLLY_OPT_SUPPORT)),)
+            LOCAL_CPPFLAGS += -Xclang -load -Xclang $(TARGET_CFX_CLANG_ROOT)/lib/LLVMPolly.so
+          endif
+        endif
+      endif
+    endif
+  endif
+endif
+
+####################################################
+## Add PGO flags if PGO is turned on and supported
+####################################################
+ifneq ($(strip $(LOCAL_PGO_SUPPORT)),)
+  ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+    ifeq ($(strip $(LOCAL_CFX_CLANG)),)
+      LOCAL_CFLAGS += $(TARGET_PGO_CFLAGS)
+      LOCAL_CPPFLAGS += $(TARGET_PGO_CFLAGS)
+      LOCAL_LDFLAGS += $(TARGET_PGO_CFLAGS)
+    endif
+  endif
+endif
+
+####################################################
+## Add cfX flags if codefirex build variant
+####################################################
+ifeq ($(TARGET_BUILD_VARIANT),codefirex)
+  ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+    LOCAL_CFLAGS += $(TARGET_CFX_CFLAGS)
+    LOCAL_CPPFLAGS += $(TARGET_CFX_CFLAGS)
+  endif
+endif
+
+####################################################
+## Add local cfX flags if codefirex build variant
+####################################################
+ifeq ($(TARGET_BUILD_VARIANT),codefirex)
+  ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
+    LOCAL_CFLAGS += $(LOCAL_CFX_CFLAGS)
+    LOCAL_CPPFLAGS += $(LOCAL_CFX_CFLAGS)
+  endif
 endif
 
 ###########################################################
@@ -161,11 +267,16 @@ my_target_project_includes := $(TARGET_PROJECT_INCLUDES)
 my_target_c_includes := $(TARGET_C_INCLUDES)
 endif # LOCAL_SDK_VERSION
 
-ifeq ($(LOCAL_CLANG),true)
-my_target_global_cflags := $(TARGET_GLOBAL_CLANG_FLAGS)
-my_target_c_includes += $(CLANG_CONFIG_EXTRA_TARGET_C_INCLUDES)
+ifeq ($(strip $(LOCAL_CLANG)),true)
+  my_target_global_cflags := $(TARGET_GLOBAL_CLANG_FLAGS)
+  my_target_c_includes += $(CLANG_CONFIG_EXTRA_TARGET_C_INCLUDES)
 else
-my_target_global_cflags := $(TARGET_GLOBAL_CFLAGS)
+  ifeq ($(strip $(LOCAL_CFX_CLANG)),true)
+    my_target_c_includes += $(CFX_CLANG_CONFIG_EXTRA_TARGET_C_INCLUDES)
+    my_target_global_cflags := $(TARGET_GLOBAL_CLANG_FLAGS)
+  else
+    my_target_global_cflags := $(TARGET_GLOBAL_CFLAGS)
+  endif
 endif # LOCAL_CLANG
 
 $(LOCAL_INTERMEDIATE_TARGETS): PRIVATE_TARGET_PROJECT_INCLUDES := $(my_target_project_includes)
@@ -197,7 +308,11 @@ ifeq ($(strip $(LOCAL_CC)),)
   ifeq ($(strip $(LOCAL_CLANG)),true)
     LOCAL_CC := $(CLANG)
   else
-    LOCAL_CC := $($(my_prefix)CC)
+    ifeq ($(strip $(LOCAL_CFX_CLANG)),true)
+      LOCAL_CC := $(CFX_CLANG)
+    else
+      LOCAL_CC := $($(my_prefix)CC)
+    endif
   endif
 endif
 ifneq ($(LOCAL_NO_STATIC_ANALYZER),true)
@@ -213,7 +328,11 @@ ifeq ($(strip $(LOCAL_CXX)),)
   ifeq ($(strip $(LOCAL_CLANG)),true)
     LOCAL_CXX := $(CLANG_CXX)
   else
-    LOCAL_CXX := $($(my_prefix)CXX)
+    ifeq ($(strip $(LOCAL_CFX_CLANG)),true)
+      LOCAL_CXX := $(CFX_CLANG_CXX)
+    else
+      LOCAL_CXX := $($(my_prefix)CXX)
+    endif
   endif
 endif
 ifneq ($(LOCAL_NO_STATIC_ANALYZER),true)
@@ -258,11 +377,16 @@ normal_objects_mode := $(if $(LOCAL_ARM_MODE),$(LOCAL_ARM_MODE),thumb)
 # TARGET_thumb_CFLAGS.  HOST_(arm|thumb)_CFLAGS values aren't
 # actually used (although they are usually empty).
 ifeq ($(strip $(LOCAL_CLANG)),true)
-arm_objects_cflags := $($(my_prefix)$(arm_objects_mode)_CLANG_CFLAGS)
-normal_objects_cflags := $($(my_prefix)$(normal_objects_mode)_CLANG_CFLAGS)
+  arm_objects_cflags := $($(my_prefix)$(arm_objects_mode)_CLANG_CFLAGS)
+  normal_objects_cflags := $($(my_prefix)$(normal_objects_mode)_CLANG_CFLAGS)
 else
-arm_objects_cflags := $($(my_prefix)$(arm_objects_mode)_CFLAGS)
-normal_objects_cflags := $($(my_prefix)$(normal_objects_mode)_CFLAGS)
+  ifeq ($(strip $(LOCAL_CFX_CLANG)),true)
+    arm_objects_cflags := $($(my_prefix)$(arm_objects_mode)_CLANG_CFLAGS)
+    normal_objects_cflags := $($(my_prefix)$(normal_objects_mode)_CLANG_CFLAGS)
+  else
+    arm_objects_cflags := $($(my_prefix)$(arm_objects_mode)_CFLAGS)
+    normal_objects_cflags := $($(my_prefix)$(normal_objects_mode)_CFLAGS)
+  endif
 endif
 
 else
@@ -646,6 +770,11 @@ normal_objects := \
     $(addprefix $(TOPDIR)$(LOCAL_PATH)/,$(LOCAL_PREBUILT_OBJ_FILES))
 
 all_objects := $(normal_objects) $(gen_o_objects)
+
+## Allow a device's own headers to take precedence over global ones
+ifneq ($(TARGET_SPECIFIC_HEADER_PATH),)
+LOCAL_C_INCLUDES := $(TOPDIR)$(TARGET_SPECIFIC_HEADER_PATH) $(LOCAL_C_INCLUDES)
+endif
 
 LOCAL_C_INCLUDES += $(TOPDIR)$(LOCAL_PATH) $(intermediates)
 

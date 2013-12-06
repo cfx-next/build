@@ -75,7 +75,7 @@ endif
 # Only the tags mentioned in this test are expected to be set by module
 # makefiles. Anything else is either a typo or a source of unexpected
 # behaviors.
-ifneq ($(filter-out debug eng tests optional samples,$(LOCAL_MODULE_TAGS)),)
+ifneq ($(filter-out debug eng tests codefirex optional samples,$(LOCAL_MODULE_TAGS)),)
 $(warning unusual tags $(LOCAL_MODULE_TAGS) on $(LOCAL_MODULE) at $(LOCAL_PATH))
 endif
 
@@ -526,12 +526,12 @@ ifndef LOCAL_UNINSTALLABLE_MODULE
 $(LOCAL_INSTALLED_MODULE): PRIVATE_POST_INSTALL_CMD := $(LOCAL_POST_INSTALL_CMD)
 ifneq ($(LOCAL_ACP_UNAVAILABLE),true)
 $(LOCAL_INSTALLED_MODULE): $(LOCAL_BUILT_MODULE) | $(ACP)
-	@echo "Install: $@"
+	@echo -e ${CL_INS}"Install: $@"${CL_RST}
 	$(copy-file-to-new-target)
 	$(PRIVATE_POST_INSTALL_CMD)
 else
 $(LOCAL_INSTALLED_MODULE): $(LOCAL_BUILT_MODULE)
-	@echo "Install: $@"
+	@echo -e ${CL_INS}"Install: $@"${CL_RST}
 	$(copy-file-to-target-with-cp)
 endif
 
@@ -539,7 +539,7 @@ ifdef LOCAL_DEX_PREOPT
 installed_odex := $(basename $(LOCAL_INSTALLED_MODULE)).odex
 built_odex := $(basename $(LOCAL_BUILT_MODULE)).odex
 $(installed_odex) : $(built_odex) $(LOCAL_BUILT_MODULE) | $(ACP)
-	@echo "Install: $@"
+        @echo -e ${CL_INS}"Install: $@"${CL_RST}
 	$(copy-file-to-target)
 
 $(LOCAL_INSTALLED_MODULE) : $(installed_odex)

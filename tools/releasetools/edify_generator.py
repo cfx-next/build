@@ -106,6 +106,16 @@ class EdifyGenerator(object):
            ");")
     self.script.append(self._WordWrap(cmd))
 
+  def RunBackup(self, command):
+    self.script.append('package_extract_file("system/bin/backuptool.sh", "/tmp/backuptool.sh");')
+    self.script.append('package_extract_file("system/bin/backuptool.functions", "/tmp/backuptool.functions");')
+    self.script.append('set_perm(0, 0, 0777, "/tmp/backuptool.sh");')
+    self.script.append('set_perm(0, 0, 0644, "/tmp/backuptool.functions");')
+    self.script.append(('run_program("/tmp/backuptool.sh", "%s");' % command))
+    if command == "restore":
+        self.script.append('delete("/system/bin/backuptool.sh");')
+        self.script.append('delete("/system/bin/backuptool.functions");')
+
   def ShowProgress(self, frac, dur):
     """Update the progress bar, advancing it over 'frac' over the next
     'dur' seconds.  'dur' may be zero to advance it via SetProgress
@@ -149,6 +159,12 @@ class EdifyGenerator(object):
                          (p.fs_type, common.PARTITION_TYPES[p.fs_type],
                           p.device, p.mount_point))
       self.mounts.add(p.mount_point)
+
+  def Unmount(self, mount_point):
+    """Unmount the partiiton with the given mount_point."""
+    if mount_point in self.mounts:
+      self.mounts.remove(mount_point)
+      self.script.append('unmount("%s");' % (mount_point,))
 
   def UnpackPackageDir(self, src, dst):
     """Unpack a given directory from the OTA package into the given
@@ -209,41 +225,28 @@ class EdifyGenerator(object):
       args = {'device': p.device, 'fn': fn}
       if partition_type == "MTD":
         self.script.append(
-            'write_raw_image(package_extract_file("%(fn)s"), "%(device)s");'
+            'package_extract_file("%(fn)s", "/tmp/boot.img");'
+            'write_raw_image("/tmp/boot.img", "%(device)s");' % args
             % args)
       elif partition_type == "EMMC":
         self.script.append(
             'package_extract_file("%(fn)s", "%(device)s");' % args)
+      elif partition_type == "BML":
+	        self.script.append(
+            ('assert(package_extract_file("%(fn)s", "/tmp/%(device)s.img"),\n'
+             '       write_raw_image("/tmp/%(device)s.img", "%(device)s"),\n'
+             '       delete("/tmp/%(device)s.img"));') % args)
       else:
         raise ValueError("don't know how to write \"%s\" partitions" % (p.fs_type,))
 
-  def SetPermissions(self, fn, uid, gid, mode, selabel, capabilities):
+  def SetPermissions(self, fn, uid, gid, mode):
     """Set file ownership and permissions."""
-    if not self.info.get("use_set_metadata", False):
-      self.script.append('set_perm(%d, %d, 0%o, "%s");' % (uid, gid, mode, fn))
-    else:
-      if capabilities is None: capabilities = "0x0"
-      cmd = 'set_metadata("%s", "uid", %d, "gid", %d, "mode", 0%o, ' \
-          '"capabilities", %s' % (fn, uid, gid, mode, capabilities)
-      if selabel is not None:
-        cmd += ', "selabel", "%s"' % ( selabel )
-      cmd += ');'
-      self.script.append(cmd)
+    self.script.append('set_perm(%d, %d, 0%o, "%s");' % (uid, gid, mode, fn))
 
-  def SetPermissionsRecursive(self, fn, uid, gid, dmode, fmode, selabel, capabilities):
+  def SetPermissionsRecursive(self, fn, uid, gid, dmode, fmode):
     """Recursively set path ownership and permissions."""
-    if not self.info.get("use_set_metadata", False):
-      self.script.append('set_perm_recursive(%d, %d, 0%o, 0%o, "%s");'
-                         % (uid, gid, dmode, fmode, fn))
-    else:
-      if capabilities is None: capabilities = "0x0"
-      cmd = 'set_metadata_recursive("%s", "uid", %d, "gid", %d, ' \
-          '"dmode", 0%o, "fmode", 0%o, "capabilities", %s' \
-          % (fn, uid, gid, dmode, fmode, capabilities)
-      if selabel is not None:
-        cmd += ', "selabel", "%s"' % ( selabel )
-      cmd += ');'
-      self.script.append(cmd)
+    self.script.append('set_perm_recursive(%d, %d, 0%o, 0%o, "%s");'
+                       % (uid, gid, dmode, fmode, fn))
 
   def MakeSymlinks(self, symlink_list):
     """Create symlinks, given a list of (dest, link) pairs."""

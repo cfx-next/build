@@ -2,8 +2,9 @@ function hmm() {
 cat <<EOF
 Invoke ". build/envsetup.sh" from your shell to add the following functions to your environment:
 - lunch:   lunch <product_name>-<build_variant>
-- tapas:   tapas [<App1> <App2> ...] [arm|x86|mips|armv5] [eng|userdebug|user]
+- tapas:   tapas [<App1> <App2> ...] [arm|x86|mips|armv5] [eng|userdebug|user|codefirex]
 - croot:   Changes directory to the top of the tree.
+- cout:    Changes directory to out.
 - m:       Makes from the top of the tree.
 - mm:      Builds all of the modules in the current directory, but not their dependencies.
 - mmm:     Builds all of the modules in the supplied directories, but not their dependencies.
@@ -13,6 +14,9 @@ Invoke ". build/envsetup.sh" from your shell to add the following functions to y
 - jgrep:   Greps on all local Java files.
 - resgrep: Greps on all local res/*.xml files.
 - godir:   Go to the directory containing a file.
+- mka:      Builds using SCHED_BATCH on all processors
+- reposync: Parallel repo sync using ionice and SCHED_BATCH
+- cmka:     Cleans and builds using mka.
 
 Look at the source to view more functions. The complete list is:
 EOF
@@ -57,6 +61,7 @@ function check_product()
         echo "Couldn't locate the top of the tree.  Try setting TOP." >&2
         return
     fi
+
     CALLED_FROM_SETUP=true BUILD_SYSTEM=build/core \
         TARGET_PRODUCT=$1 \
         TARGET_BUILD_VARIANT= \
@@ -66,7 +71,21 @@ function check_product()
     # hide successful answers, but allow the errors to show
 }
 
-VARIANT_CHOICES=(user userdebug eng)
+VARIANT_CHOICES=(user userdebug eng codefirex)
+TYPE_CHOICES=(release debug development)
+
+# check to see if the supplied type is valid
+function check_type()
+{
+    for v in ${TYPE_CHOICES[@]}
+    do
+        if [ "$v" = "$1" ]
+        then
+            return 0
+        fi
+    done
+    return 1
+}
 
 # check to see if the supplied variant is valid
 function check_variant()
@@ -148,7 +167,24 @@ function setpaths()
     unset ARM_EABI_TOOLCHAIN ARM_EABI_TOOLCHAIN_PATH
     case $ARCH in
         arm)
-            toolchaindir=arm/arm-eabi-$targetgccversion/bin
+
+            local ARM_GCC_VER=$(get_build_var TARGET_ARM_EABI_VERSION)
+            case $ARM_GCC_VER in
+            4.6) toolchaindir=arm/arm-eabi-4.6/bin
+                ;;
+            4.7) toolchaindir=arm/arm-eabi-4.7/bin
+                ;;
+            4.8) toolchaindir=arm/arm-eabi-4.8/bin
+                ;;
+            *)
+                if [ -d "$ARM_GCC_VER" ]; then
+                    echo "Error: Can't find unknown GCC version: $TARGET_ARM_EABI_VERSION"
+                    echo "Now using AOSP arm-eabi 4.7.y for kernel"
+                    export TARGET_ARM_EABI_VERSION=4.7
+                fi
+                toolchaindir=arm/arm-eabi-4.7/bin
+                ;;
+            esac
             if [ -d "$gccprebuiltdir/$toolchaindir" ]; then
                  export ARM_EABI_TOOLCHAIN="$gccprebuiltdir/$toolchaindir"
                  ARM_EABI_TOOLCHAIN_PATH=":$gccprebuiltdir/$toolchaindir"
@@ -256,50 +292,56 @@ function addcompletions()
     fi
 }
 
+function build_toolchain()
+{
+    local build_type=$TARGET_BUILD_TYPE
+    local dev_type=development
+    if [ "$build_type" = "$dev_type" ]; then
+        toolchain_build arm-linux-androideabi
+    fi
+}
+
 function choosetype()
 {
     echo "Build type choices are:"
-    echo "     1. release"
-    echo "     2. debug"
-    echo
+    local index=1
+    local v
+    for v in ${TYPE_CHOICES[@]}
+    do
+        # The product name is the name of the directory containing
+        # the makefile we found, above.
+        echo "     $index. $v"
+        index=$(($index+1))
+    done
 
-    local DEFAULT_NUM DEFAULT_VALUE
-    DEFAULT_NUM=1
-    DEFAULT_VALUE=release
+    local default_value=release
+    local ANSWER
 
     export TARGET_BUILD_TYPE=
-    local ANSWER
-    while [ -z $TARGET_BUILD_TYPE ]
+    while [ -z "$TARGET_BUILD_TYPE" ]
     do
-        echo -n "Which would you like? ["$DEFAULT_NUM"] "
+        echo -n "Which would you like? [$default_value] "
         if [ -z "$1" ] ; then
             read ANSWER
         else
             echo $1
             ANSWER=$1
         fi
-        case $ANSWER in
-        "")
-            export TARGET_BUILD_TYPE=$DEFAULT_VALUE
-            ;;
-        1)
-            export TARGET_BUILD_TYPE=release
-            ;;
-        release)
-            export TARGET_BUILD_TYPE=release
-            ;;
-        2)
-            export TARGET_BUILD_TYPE=debug
-            ;;
-        debug)
-            export TARGET_BUILD_TYPE=debug
-            ;;
-        *)
-            echo
-            echo "I didn't understand your response.  Please try again."
-            echo
-            ;;
-        esac
+
+        if [ -z "$ANSWER" ] ; then
+            export TARGET_BUILD_TYPE=$default_value
+        elif (echo -n $ANSWER | grep -q -e "^[0-9][0-9]*$") ; then
+            if [ "$ANSWER" -le "${#TYPE_CHOICES[@]}" ] ; then
+                export TARGET_BUILD_TYPE=${TYPE_CHOICES[$(($ANSWER-1))]}
+            fi
+        else
+            if check_type $ANSWER
+            then
+                export TARGET_BUILD_TYPE=$ANSWER
+            else
+                echo "** Not a valid build type: $ANSWER"
+            fi
+        fi
         if [ -n "$1" ] ; then
             break
         fi
@@ -365,7 +407,7 @@ function choosevariant()
         index=$(($index+1))
     done
 
-    local default_value=eng
+    local default_value=codefirex
     local ANSWER
 
     export TARGET_BUILD_VARIANT=
@@ -509,7 +551,7 @@ function lunch()
     if [ $? -ne 0 ]
     then
         echo
-        echo "** Invalid variant: '$variant'"
+        echo "** Invalid build variant: '$variant'"
         echo "** Must be one of ${VARIANT_CHOICES[@]}"
         variant=
     fi
@@ -520,9 +562,34 @@ function lunch()
         return 1
     fi
 
+    local typeselection=${TYPE_CHOICES}
+    local type=$(echo -n $typeselection | sed -e "s/^[^\-]*-//")
+    check_type $type
+    if [ $? -ne 0 ]
+    then
+        echo
+        echo "** Invalid build type: '$type'"
+        echo "** Must be one of ${TYPE_CHOICES[@]}"
+        type=
+    fi
+
+    if [ -z "$type" ]
+    then
+        echo
+        return 1
+    fi
+
     export TARGET_PRODUCT=$product
     export TARGET_BUILD_VARIANT=$variant
-    export TARGET_BUILD_TYPE=release
+
+    local cfx_variant=codefirex
+    local development_type=development
+    if [ "$variant" = "$cfx_variant" ]; then
+        export TARGET_BUILD_TYPE=$development_type
+    else
+        export TARGET_BUILD_TYPE=$type
+    fi
+
 
     echo
 
@@ -548,8 +615,9 @@ complete -F _lunch lunch
 function tapas()
 {
     local arch=$(echo -n $(echo $* | xargs -n 1 echo | \grep -E '^(arm|x86|mips|armv5)$'))
-    local variant=$(echo -n $(echo $* | xargs -n 1 echo | \grep -E '^(user|userdebug|eng)$'))
-    local apps=$(echo -n $(echo $* | xargs -n 1 echo | \grep -E -v '^(user|userdebug|eng|arm|x86|mips|armv5)$'))
+    local variant=$(echo -n $(echo $* | xargs -n 1 echo | \grep -E '^(user|userdebug|eng|codefirex)$'))
+    local type=$(echo -n $(echo $* | xargs -n 1 echo | \grep -E '^(release|debug|development)$'))
+    local apps=$(echo -n $(echo $* | xargs -n 1 echo | \grep -E -v '^(user|userdebug|eng|codefirex|arm|x86|mips|armv5)$'))
 
     if [ $(echo $arch | wc -w) -gt 1 ]; then
         echo "tapas: Error: Multiple build archs supplied: $arch"
@@ -569,13 +637,21 @@ function tapas()
     if [ -z "$variant" ]; then
         variant=eng
     fi
+    local cfx_variant=codefirex
+    if [ -z "$type" ]; then
+        if [ "$variant" = "$cfx_variant" ]; then
+            type=development
+        else
+            type=release
+        fi
+    fi
     if [ -z "$apps" ]; then
         apps=all
     fi
 
     export TARGET_PRODUCT=$product
     export TARGET_BUILD_VARIANT=$variant
-    export TARGET_BUILD_TYPE=release
+    export TARGET_BUILD_TYPE=$type
     export TARGET_BUILD_APPS=$apps
 
     set_stuff_for_environment
@@ -598,7 +674,7 @@ function gettop
             T=
             while [ \( ! \( -f $TOPFILE \) \) -a \( $PWD != "/" \) ]; do
                 \cd ..
-                T=`PWD= /bin/pwd`
+                T=`PWD= /bin/pwd -P`
             done
             \cd $HERE
             if [ -f "$T/$TOPFILE" ]; then
@@ -652,12 +728,17 @@ function findmakefile()
 
 function mm()
 {
-    local T=$(gettop)
-    local DRV=$(getdriver $T)
+    local MM_MAKE=make
+    local ARG=
+    for ARG in $@ ; do
+        if [ "$ARG" = mka ]; then
+            MM_MAKE=mka
+        fi
+    done
     # If we're sitting in the root of the build tree, just do a
     # normal make.
     if [ -f build/core/envsetup.mk -a -f Makefile ]; then
-        $DRV make $@
+        $MM_MAKE $@
     else
         # Find the closest Android.mk file.
         local M=$(findmakefile)
@@ -690,8 +771,8 @@ function mm()
 
 function mmm()
 {
-    local T=$(gettop)
-    local DRV=$(getdriver $T)
+    local MMM_MAKE=make
+    T=$(gettop)
     if [ "$T" ]; then
         local MAKEFILE=
         local MODULES=
@@ -793,6 +874,15 @@ function croot()
         \cd $(gettop)
     else
         echo "Couldn't locate the top of the tree.  Try setting TOP."
+    fi
+}
+
+function cout()
+{
+    if [  "$OUT" ]; then
+        cd $OUT
+    else
+        echo "Couldn't locate out directory.  Try setting OUT."
     fi
 }
 
@@ -1321,6 +1411,57 @@ function godir () {
     \cd $T/$pathname
 }
 
+function mka() {
+    case `uname -s` in
+        Darwin)
+            make -j `sysctl hw.ncpu|cut -d" " -f2` "$@"
+            ;;
+        *)
+            schedtool -B -n 1 -e ionice -n 1 make -j$(cat /proc/cpuinfo | grep "^processor" | wc -l) "$@"
+            ;;
+    esac
+}
+
+function cmka() {
+    if [ ! -z "$1" ]; then
+        for i in "$@"; do
+            case $i in
+                bacon|otapackage|systemimage)
+                    mka installclean
+                    mka $i
+                    ;;
+                *)
+                    mka clean-$i
+                    mka $i
+                    ;;
+            esac
+        done
+    else
+        mka clean
+        mka
+    fi
+}
+
+function reposync() {
+    case `uname -s` in
+        Darwin)
+            repo sync -j 4 "$@"
+            ;;
+        *)
+            schedtool -B -n 1 -e ionice -n 1 `which repo` sync -j 4 "$@"
+            ;;
+    esac
+}
+
+function repodiff() {
+    if [ -z "$*" ]; then
+        echo "Usage: repodiff <ref-from> [[ref-to] [--numstat]]"
+        return
+    fi
+    diffopts=$* repo forall -c \
+      'echo "$REPO_PATH ($REPO_REMOTE)"; git diff ${diffopts} 2>/dev/null ;'
+}
+
 # Force JAVA_HOME to point to java 1.6 if it isn't already set
 function set_java_home() {
     if [ ! "$JAVA_HOME" ]; then
@@ -1368,3 +1509,8 @@ done
 unset f
 
 addcompletions
+
+export ANDROID_BUILD_TOP=$(gettop)
+
+# Get toolchain build functions
+source $ANDROID_BUILD_TOP/toolchain/build.sh
