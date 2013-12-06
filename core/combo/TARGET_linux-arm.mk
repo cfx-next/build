@@ -35,9 +35,7 @@ ifeq ($(strip $(TARGET_ARCH_VARIANT)),)
 endif
 
 ifeq ($(strip $(TARGET_GCC_VERSION_EXP)),)
-
-ifeq ($(strip $(TARGET_GCC_VERSION_EXP)),)
-  TARGET_GCC_VERSION := 4.7
+  TARGET_GCC_VERSION := 4.8
 else
   TARGET_GCC_VERSION := $(TARGET_GCC_VERSION_EXP)
 endif
