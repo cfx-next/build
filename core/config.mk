@@ -250,11 +250,7 @@ ifeq ($(TARGET_CPU_ABI),)
 endif
 TARGET_CPU_ABI2 := $(strip $(TARGET_CPU_ABI2))
 
-# enable selinux on all variants but
-# codefirex
-ifneq ($(TARGET_BUILD_VARIANT),codefirex)
-  HAVE_SELINUX := true
-endif
+HAVE_SELINUX := true
 
 # $(1): os/arch
 define select-android-config-h
