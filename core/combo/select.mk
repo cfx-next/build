@@ -59,7 +59,7 @@ ifeq ($(DEBUG_NO_STRICT_ALIASING),yes)
 $(combo_target)RELEASE_CFLAGS += -fno-strict-aliasing -Wno-error=strict-aliasing
 endif
 $(combo_target)GLOBAL_LDFLAGS := -Wl,-O3
-$(combo_target)GLOBAL_ARFLAGS := crsP
+$(combo_target)GLOBAL_ARFLAGS := crsPD
 
 $(combo_target)EXECUTABLE_SUFFIX :=
 $(combo_target)SHLIB_SUFFIX := .so

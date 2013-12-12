@@ -23,6 +23,7 @@ PRODUCT_PACKAGES += \
     android.test.runner \
     app_process \
     applypatch \
+    blkid \
     bmgr \
     bugreport \
     content \
@@ -77,7 +78,6 @@ PRODUCT_PACKAGES += \
     libutils \
     libvisualizer \
     libvorbisidec \
-    libwpa_client \
     media \
     media_cmd \
     mediaserver \

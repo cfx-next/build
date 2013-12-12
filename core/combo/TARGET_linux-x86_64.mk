@@ -34,6 +34,8 @@ else
   TARGET_CFX_CLANG_VERSION := $(TARGET_CFX_CLANG_VERSION_EXP)
 endif
 
+TARGET_IS_64_BIT := true
+
 # Include the arch-variant-specific configuration file.
 # Its role is to define various ARCH_X86_HAVE_XXX feature macros,
 # plus initial values for TARGET_GLOBAL_CFLAGS
