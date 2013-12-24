@@ -169,6 +169,7 @@ $(info $(space))
 $(info You use OpenJDK but only Sun/Oracle JDK is supported.)
 $(info Please follow the machine setup instructions at)
 $(info $(space)$(space)$(space)$(space)https://source.android.com/source/download.html)
+$(info If you would like to use OpenJDK7, set EXPERIMENTAL_USE_JAVA7.)
 $(info ************************************************************)
 $(error stop)
 endif # java version is not Sun Oracle JDK
