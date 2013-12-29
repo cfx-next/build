@@ -154,12 +154,12 @@ ifeq ($(shell java -version 2>&1 | grep -i openjdk),)
 $(info ************************************************************)
 $(info You are attempting to build with an unsupported JDK.)
 $(info $(space))
-$(info This build requires OpenJDK, but you are using:
+$(info This build requires OpenJDK, but you are using:)
 $(info $(shell java -version 2>&1 | head -n 2).)
 $(info Please follow the machine setup instructions at)
 $(info $(space)$(space)$(space)$(space)https://source.android.com/source/download.html)
 $(info ************************************************************)
-$(error stop)
+#$(error stop)
 endif # java version is not OpenJdk
 else # if requires_openjdk
 ifneq ($(shell java -version 2>&1 | grep -i openjdk),)
