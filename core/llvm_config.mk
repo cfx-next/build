@@ -30,6 +30,7 @@ CLANG_CONFIG_EXTRA_CFLAGS := \
 CFX_CLANG_CONFIG_EXTRA_CFLAGS := \
   $(CLANG_CONFIG_EXTRA_CFLAGS) \
   -Wno-error=extern-c-compat \
+  -fcolor-diagnostics \
   -Qignore-c-std-not-allowed-with-cplusplus
 
 CLANG_CONFIG_UNKNOWN_CFLAGS := \
