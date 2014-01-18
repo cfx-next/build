@@ -1,5 +1,6 @@
+# Support setting TARGET_CFX_CLANG_PREFIX to a custom directory for your build
 ifeq ($(strip $(TARGET_CFX_CLANG_PREFIX)),)
-  TARGET_CFX_CLANG_ROOT := prebuilts/clang/linux-x86/$(TARGET_CFX_CLANG_VERSION)
+  TARGET_CFX_CLANG_ROOT := prebuilts/clang/$(HOST_OS)-$(HOST_ARCH)/$(TARGET_CFX_CLANG_VERSION)
   TARGET_CFX_CLANG_PREFIX := $(TARGET_CFX_CLANG_ROOT)/bin
 endif
 

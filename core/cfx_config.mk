@@ -65,3 +65,7 @@ endif
 ifeq ($(TARGET_QCOM_DISPLAY_VARIANT),caf)
   TARGET_CFX_CFLAGS += -DCAF_QCOM_VARIANT
 endif
+
+ifneq ($(HOST_OS),darwin)
+  TARGET_CFX_LDFLAGS += -Wl,-O3
+endif

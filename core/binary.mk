@@ -209,7 +209,7 @@ ifeq ($(strip $(WITHOUT_CLANG)),)
         LOCAL_LDFLAGS += $(CLANG_CONFIG_EXTRA_LDFLAGS)
         ifeq ($(strip $(BUILD_DISABLE_POLLY_OPT)),)
           ifeq ($(strip $(LOCAL_NO_POLLY_OPT_SUPPORT)),)
-            LOCAL_CPPFLAGS += -Xclang -load -Xclang $(TARGET_CFX_CLANG_ROOT)/lib/LLVMPolly.so
+            LOCAL_CPPFLAGS += -Xclang -load -Xclang $(TARGET_CFX_CLANG_ROOT)/lib/LLVMPolly.$(LLVM_LIB_SUFFIX)
           endif
         endif
       endif
@@ -237,6 +237,7 @@ ifeq ($(TARGET_BUILD_VARIANT),codefirex)
   ifeq ($(strip $(LOCAL_IS_HOST_MODULE)),)
     LOCAL_CFLAGS += $(TARGET_CFX_CFLAGS)
     LOCAL_CPPFLAGS += $(TARGET_CFX_CFLAGS)
+    LOCAL_LDFLAGS += $(TARGET_CFX_LDFLAGS)
   endif
 endif
 

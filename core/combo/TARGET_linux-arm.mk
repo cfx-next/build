@@ -55,6 +55,12 @@ ifeq ($(strip $(wildcard $(TARGET_ARCH_SPECIFIC_MAKEFILE))),)
   $(error Unknown ARM architecture version: $(TARGET_ARCH_VARIANT))
 endif
 
+ifeq ($(HOST_OS),linux)
+  LLVM_LIB_SUFFIX := so
+else # darwin and the bsds use dylib
+  LLVM_LIB_SUFFIX := dylib
+endif
+
 include $(TARGET_ARCH_SPECIFIC_MAKEFILE)
 
 # You can set TARGET_TOOLS_PREFIX to get gcc from somewhere else
