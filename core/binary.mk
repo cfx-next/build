@@ -197,7 +197,15 @@ endif
 
 ####################################################
 ## Enable cfX-Toolchain Clang by default unless
-# LOCAL_GCC is specified, or globally disabled
+# LOCAL_GCC is specified, or globally disabled.
+#
+# We globally enable the following optimizations
+# unless locally disabled:
+# - LLVM Polly optimizations (polyhedral loop
+#   optimizations
+# - Loop rerolling to enable vectorization and
+#   reduce code size (via optimization pass manager)
+#
 ####################################################
 ifeq ($(strip $(WITHOUT_CLANG)),)
   ifeq ($(strip $(LOCAL_GCC)),)
@@ -210,6 +218,9 @@ ifeq ($(strip $(WITHOUT_CLANG)),)
         ifeq ($(strip $(BUILD_DISABLE_POLLY_OPT)),)
           ifeq ($(strip $(LOCAL_NO_POLLY_OPT_SUPPORT)),)
             LOCAL_CPPFLAGS += -Xclang -load -Xclang $(TARGET_CFX_CLANG_ROOT)/lib/LLVMPolly.$(LLVM_LIB_SUFFIX)
+          endif
+          ifeq ($(strip $(LOCAL_NO_LOOP_REROLL_SUPPORT)),)
+            LOCAL_CFLAGS += -freroll-loops
           endif
         endif
       endif
