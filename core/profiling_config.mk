@@ -28,7 +28,7 @@ ifneq ($(strip $(BUILD_FDO_INSTRUMENT)),)
   TARGET_FDO_CFLAGS := -fprofile-generate=/data/local/tmp/profile -DANDROID_FDO
   TARGET_FDO_LIB := $(target_libgcov)
 else
-  # If BUILD_FDO_INSTRUMENT is turned off, then consider doing the FDO optimizations.
+  # If BUILD_FDO_INSTRUMENT is turned off, then consider doing the FDO.
   # Set TARGET_FDO_PROFILE_PATH to set a custom profile directory for your build.
   ifeq ($(strip $(TARGET_FDO_PROFILE_PATH)),)
     TARGET_FDO_PROFILE_PATH := fdo/profiles/$(TARGET_ARCH)/$(TARGET_ARCH_VARIANT)
@@ -49,16 +49,23 @@ endif
 # Define sample based PGO (Profile Guided Optimization) options
 #
 
-# Support setting TARGET_PGO_PROFILE_PATH to a custom profile directory for your build.
-ifeq ($(strip $(TARGET_PGO_PROFILE_PATH)),)
-  TARGET_PGO_PROFILE_PATH := pgo/profiles/$(TARGET_ARCH)/$(TARGET_ARCH_VARIANT)
+ifneq ($(strip $(BUILD_PGO_INSTRUMENT)),)
+  # Set BUILD_FDO_INSTRUMENT=true to turn on PGO instrumentation.
+  # The profile will be generated on /data/local/tmp/profile on the device.
+  TARGET_PGO_CFLAGS := -fprofile-instr-generate
 else
-  ifeq ($(strip $(wildcard $(TARGET_PGO_PROFILE_PATH))),)
-    $(warning Custom TARGET_PGO_PROFILE_PATH supplied, but directory is not accessible. Disabling PGO.)
+  # If BUILD_PGO_INSTRUMENT is turned off, then consider doing the PGO.
+  # Support setting TARGET_PGO_PROFILE_PATH to a custom profile directory for your build.
+  ifeq ($(strip $(TARGET_PGO_PROFILE_PATH)),)
+    TARGET_PGO_PROFILE_PATH := pgo/profiles/$(TARGET_ARCH)/$(TARGET_ARCH_VARIANT)
+  else
+    ifeq ($(strip $(wildcard $(TARGET_PGO_PROFILE_PATH))),)
+      $(warning Custom TARGET_PGO_PROFILE_PATH supplied, but directory is not accessible. Disabling PGO.)
+    endif
   endif
-endif
 
-# If the PGO profile directory can't be found, then PGO is off.
-ifneq ($(strip $(wildcard $(TARGET_PGO_PROFILE_PATH))),)
-  TARGET_PGO_CFLAGS := -fprofile-sample-use=$(TARGET_PGO_PROFILE_PATH)
+  # If the PGO profile directory can't be found, then PGO is off.
+  ifneq ($(strip $(wildcard $(TARGET_PGO_PROFILE_PATH))),)
+    TARGET_PGO_CFLAGS := -fprofile-sample-use=$(TARGET_PGO_PROFILE_PATH)
+  endif
 endif
