@@ -1467,7 +1467,11 @@ function set_java_home() {
     if [ ! "$JAVA_HOME" ]; then
         case `uname -s` in
             Darwin)
-                export JAVA_HOME=/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home
+                if [ -f /usr/libexec/java_home ]; then
+                    export JAVA_HOME=`/usr/libexec/java_home`
+                else
+                    export JAVA_HOME=/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home
+                fi
                 ;;
             *)
                 export JAVA_HOME=/usr/lib/jvm/java-6-sun
