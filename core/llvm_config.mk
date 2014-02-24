@@ -96,7 +96,6 @@ ifeq ($(TARGET_ARCH),arm)
   CLANG_CONFIG_EXTRA_ASFLAGS += \
     -target arm-linux-androideabi \
     -nostdlibinc \
-    -no-integrated-as \
     -B$(TARGET_TOOLCHAIN_ROOT)/arm-linux-androideabi/bin
   CFX_CLANG_CONFIG_EXTRA_CFLAGS += \
     $(CLANG_CONFIG_EXTRA_ASFLAGS) \
