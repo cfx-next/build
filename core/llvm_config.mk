@@ -31,6 +31,7 @@ CLANG_CONFIG_EXTRA_CFLAGS := \
 CFX_CLANG_CONFIG_EXTRA_CFLAGS := \
   $(CLANG_CONFIG_EXTRA_CFLAGS) \
   -Wno-error=extern-c-compat \
+  -Wno-error=implicit-exception-spec-mismatch \
   -Wno-error=memsize-comparison \
   -fcolor-diagnostics \
   -Qignore-c-std-not-allowed-with-cplusplus
