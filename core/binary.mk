@@ -219,6 +219,7 @@ ifeq ($(strip $(WITHOUT_CLANG)),)
         ifeq ($(strip $(BUILD_DISABLE_POLLY_OPT)),)
           ifeq ($(strip $(LOCAL_NO_POLLY_OPT_SUPPORT)),)
             LOCAL_CPPFLAGS += -Xclang -load -Xclang $(TARGET_CFX_CLANG_ROOT)/lib/LLVMPolly.$(LLVM_LIB_SUFFIX)
+            LOCAL_CPPFLAGS += -mllvm -polly
           endif
           ifeq ($(strip $(LOCAL_NO_LOOP_REROLL_SUPPORT)),)
             LOCAL_CFLAGS += -freroll-loops
