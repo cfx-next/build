@@ -216,25 +216,16 @@ $(info ************************************************************)
 $(error stop)
 endif
 
-# Check for LLVM Polly dependencies
-# LLVM Polly requires at least CLooG 0.18.1 and ISL 0.12.1 (included in Cloog 0.18.1)
-ifeq ($(shell cloog --version 2>&1 | head -n 1 | grep '^CLooG 0.18.1'),)
-ifeq ($(shell cloog-isl --version 2>&1 | head -n 1 | grep '^CLooG 0.18.1'),)
-ifeq ($(shell cloog --version 2>&1 | head -n 1 | grep '^CLooG 0.18.2'),)
-ifeq ($(shell cloog-isl --version 2>&1 | head -n 1 | grep '^CLooG 0.18.2'),)
+# Check for cfX LLVM Polly dependencies
+# cfX LLVM Polly requires our included cloog and isl to be installed or available on the host
+ifeq ($(shell cloog --version 2>&1 | head -n 1 | grep 'fba30127'),)
 $(warning ********************************************************************************)
-$(warning *  codefireXperiment building requires at least CLooG 0.18.1 and ISL 0.12.1.)
-$(warning *  ISL 0.12.1 is included in CLooG 0.18.1 by default.)
+$(warning *  codefireX building requires the included ClooG and ISL to be installed or available.)
 $(warning *  This is a requirement for utilizing LLVM Polly optimizations.)
-$(warning *  Check for your distro for the package(s) required, or install manually.)
-$(warning *  See http://www.cloog.org/)
-$(warning *  We also have CLooG 0.18.1 source in the following path:)
-$(warning *  $(ANDROID_BUILD_TOP)/toolchain/src/cloog)
+$(warning *  Please lunch your device and run "cloogisl_build" then follow the instructions.)
+$(warning *  If you have run this prior but deleted the destination, you must run again.)
 $(warning ********************************************************************************)
 $(error stopping)
-endif
-endif
-endif
 endif
 
 ifndef BUILD_EMULATOR

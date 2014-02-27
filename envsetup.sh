@@ -197,10 +197,17 @@ function setpaths()
             ;;
     esac
 
+    # Required for LLVM Polly optimizations
+    export CLOOGISL_BIN=$T/prebuilts/cloog/inline/bin
+    export CLOOGISL_LIB=$T/prebuilts/cloog/inline/lib
+    export CLOOGISL_INC=$T/prebuilts/cloog/inline/includes
+    export CLOOGISL_SHR=$T/prebuilts/cloog/inline/share
+    export LD_LIBRARY_PATH=$CLOOGISL_LIB:$LD_LIBRARY_PATH
+
     export ANDROID_TOOLCHAIN=$ANDROID_EABI_TOOLCHAIN
     export ANDROID_QTOOLS=$T/development/emulator/qtools
     export ANDROID_DEV_SCRIPTS=$T/development/scripts:$T/prebuilts/devtools/tools
-    export ANDROID_BUILD_PATHS=$(get_build_var ANDROID_BUILD_PATHS):$ANDROID_QTOOLS:$ANDROID_TOOLCHAIN$ARM_EABI_TOOLCHAIN_PATH$CODE_REVIEWS:$ANDROID_DEV_SCRIPTS:
+    export ANDROID_BUILD_PATHS=$(get_build_var ANDROID_BUILD_PATHS):$CLOOGISL_BIN:$CLOOGISL_LIB:$CLOOGISL_INC:$CLOOGISL_SHR:$ANDROID_QTOOLS:$ANDROID_TOOLCHAIN$ARM_EABI_TOOLCHAIN_PATH$CODE_REVIEWS:$ANDROID_DEV_SCRIPTS:
     export PATH=$ANDROID_BUILD_PATHS$PATH
 
     unset ANDROID_JAVA_TOOLCHAIN
