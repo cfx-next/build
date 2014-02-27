@@ -218,6 +218,8 @@ ifeq ($(strip $(WITHOUT_CLANG)),)
         LOCAL_LDFLAGS += $(CLANG_CONFIG_EXTRA_LDFLAGS)
         ifeq ($(strip $(BUILD_DISABLE_POLLY_OPT)),)
           ifeq ($(strip $(LOCAL_NO_POLLY_OPT_SUPPORT)),)
+            LOCAL_CFLAGS += -Xclang -load -Xclang $(TARGET_CFX_CLANG_ROOT)/lib/LLVMPolly.$(LLVM_LIB_SUFFIX)
+            LOCAL_CFLAGS += -mllvm -polly
             LOCAL_CPPFLAGS += -Xclang -load -Xclang $(TARGET_CFX_CLANG_ROOT)/lib/LLVMPolly.$(LLVM_LIB_SUFFIX)
             LOCAL_CPPFLAGS += -mllvm -polly
           endif
