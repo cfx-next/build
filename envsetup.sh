@@ -198,10 +198,19 @@ function setpaths()
     esac
 
     # Required for LLVM Polly optimizations
-    export CLOOGISL_BIN=$T/prebuilts/cloog/inline/bin
-    export CLOOGISL_LIB=$T/prebuilts/cloog/inline/lib
-    export CLOOGISL_INC=$T/prebuilts/cloog/inline/includes
-    export CLOOGISL_SHR=$T/prebuilts/cloog/inline/share
+    case `uname -s` in
+        Darwin)
+            CLOOGISL_ROOT=$T/prebuilts/cloog-isl/darwin-x86
+            ;;
+        *)
+            CLOOGISL_ROOT=$T/prebuilts/cloog/inline
+            ;;
+    esac
+
+    export CLOOGISL_BIN=$CLOOGISL_ROOT/bin
+    export CLOOGISL_LIB=$CLOOGISL_ROOT/lib
+    export CLOOGISL_INC=$CLOOGISL_ROOT/includes
+    export CLOOGISL_SHR=$CLOOGISL_ROOT/share
     export LD_LIBRARY_PATH=$CLOOGISL_LIB:$LD_LIBRARY_PATH
 
     export ANDROID_TOOLCHAIN=$ANDROID_EABI_TOOLCHAIN
