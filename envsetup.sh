@@ -198,15 +198,7 @@ function setpaths()
     esac
 
     # Required for LLVM Polly optimizations
-    case `uname -s` in
-        Darwin)
-            CLOOGISL_ROOT=$T/prebuilts/cloog-isl/darwin-x86
-            ;;
-        *)
-            CLOOGISL_ROOT=$T/prebuilts/cloog/inline
-            ;;
-    esac
-
+    export CLOOGISL_ROOT=$T/prebuilts/cloog/inline
     export CLOOGISL_BIN=$CLOOGISL_ROOT/bin
     export CLOOGISL_LIB=$CLOOGISL_ROOT/lib
     export CLOOGISL_INC=$CLOOGISL_ROOT/includes

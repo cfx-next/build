@@ -219,6 +219,7 @@ endif
 # Check for cfX LLVM Polly dependencies
 # cfX LLVM Polly requires our included cloog and isl to be installed or available on the host
 ifeq ($(shell cloog --version 2>&1 | head -n 1 | grep 'fba30127'),)
+ifneq (darwin,$(HOST_OS))
 $(warning ********************************************************************************)
 $(warning *  codefireX building requires the included ClooG and ISL to be installed or available.)
 $(warning *  This is a requirement for utilizing LLVM Polly optimizations.)
@@ -226,6 +227,12 @@ $(warning *  Please lunch your device and run "cloogisl_build" then follow the i
 $(warning *  If you have run this prior but deleted the destination, you must run again.)
 $(warning ********************************************************************************)
 $(error stopping)
+else # darwin HOST_OS
+$(warning Unfortunately due to dynamic lib and static building requirements on darwin, we require)
+$(warning root access to install our cloog and isl packages. This may be done with the following:)
+$(warning sudo cp -rf prebuilts/cloog-isl/darwin-x86/* /usr/)
+$(error stopping)
+endif
 endif
 
 ifndef BUILD_EMULATOR
