@@ -46,8 +46,6 @@ CLANG_CONFIG_UNKNOWN_CFLAGS := \
   -ftree-loop-linear \
   -funswitch-loops \
   -fvect-cost-model \
-  -march=armv7-a \
-  -march=armv7-a-neon \
   -mvectorize-with-neon-quad \
   -Wstrict-aliasing=3 \
   -Wno-unused-but-set-parameter \
