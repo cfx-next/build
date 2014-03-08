@@ -23,7 +23,7 @@ TARGET_ARCH_VARIANT := x86_64
 endif
 
 ifeq ($(strip $(TARGET_GCC_VERSION_EXP)),)
-TARGET_GCC_VERSION := 4.7
+TARGET_GCC_VERSION := 4.8
 else
 TARGET_GCC_VERSION := $(TARGET_GCC_VERSION_EXP)
 endif
@@ -62,10 +62,10 @@ TARGET_LD := $(TARGET_TOOLS_PREFIX)ld$(HOST_EXECUTABLE_SUFFIX)
 TARGET_STRIP := $(TARGET_TOOLS_PREFIX)strip$(HOST_EXECUTABLE_SUFFIX)
 
 ifeq ($(TARGET_BUILD_VARIANT),user)
-TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-debug $< -o $@
+TARGET_STRIP_COMMAND = $(PRIVATE_STRIP) --strip-all $< -o $@
 else
-TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-debug $< -o $@ && \
-	$(TARGET_OBJCOPY) --add-gnu-debuglink=$< $@
+TARGET_STRIP_COMMAND = $(PRIVATE_STRIP) --strip-all $< -o $@ && \
+	$(PRIVATE_OBJCOPY) --add-gnu-debuglink=$< $@
 endif
 
 ifneq ($(wildcard $(TARGET_CC)),)
@@ -80,22 +80,12 @@ TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
 libc_root := bionic/libc
 libm_root := bionic/libm
 libstdc++_root := bionic/libstdc++
-libthread_db_root := bionic/libthread_db
 
 # inherit profiling options
 include $(BUILD_SYSTEM)/profiling_config.mk
 
-# unless CUSTOM_KERNEL_HEADERS is defined, we're going to use
-# symlinks located in out/ to point to the appropriate kernel
-# headers. see 'config/kernel_headers.make' for more details
-#
-ifneq ($(CUSTOM_KERNEL_HEADERS),)
-    KERNEL_HEADERS_COMMON := $(CUSTOM_KERNEL_HEADERS)
-    KERNEL_HEADERS_ARCH   := $(CUSTOM_KERNEL_HEADERS)
-else
-    KERNEL_HEADERS_COMMON := $(libc_root)/kernel/uapi
-    KERNEL_HEADERS_ARCH   := $(libc_root)/kernel/uapi/asm-x86 # x86 covers both x86 and x86_64.
-endif
+KERNEL_HEADERS_COMMON := $(libc_root)/kernel/uapi
+KERNEL_HEADERS_ARCH   := $(libc_root)/kernel/uapi/asm-x86 # x86 covers both x86 and x86_64.
 KERNEL_HEADERS := $(KERNEL_HEADERS_COMMON) $(KERNEL_HEADERS_ARCH)
 
 TARGET_GLOBAL_CFLAGS += \
@@ -116,6 +106,11 @@ TARGET_GLOBAL_CFLAGS += \
 			-funwind-tables \
 			-fstack-protector \
 			-m64
+
+# Help catch common 32/64-bit errors.
+TARGET_GLOBAL_CFLAGS += \
+    -Werror=pointer-to-int-cast \
+    -Werror=int-to-pointer-cast \
 
 android_config_h := $(call select-android-config-h,target_linux-x86)
 TARGET_ANDROID_CONFIG_CFLAGS := -include $(android_config_h) -I $(dir $(android_config_h))
@@ -156,7 +151,6 @@ TARGET_C_INCLUDES := \
 	$(KERNEL_HEADERS) \
 	$(libm_root)/include \
 	$(libm_root)/include/amd64 \
-	$(libthread_db_root)/include
 
 TARGET_CRTBEGIN_STATIC_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_static.o
 TARGET_CRTBEGIN_DYNAMIC_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_dynamic.o
@@ -175,7 +169,6 @@ $(hide) $(PRIVATE_CXX) \
 	$(PRIVATE_TARGET_GLOBAL_LDFLAGS) \
 	 -nostdlib -Wl,-soname,$(notdir $@) \
 	 -shared -Bsymbolic \
-	$(TARGET_GLOBAL_CFLAGS) \
 	$(PRIVATE_TARGET_GLOBAL_LD_DIRS) \
 	$(if $(filter true,$(PRIVATE_NO_CRT)),,$(PRIVATE_TARGET_CRTBEGIN_SO_O)) \
 	$(PRIVATE_ALL_OBJECTS) \
@@ -201,7 +194,7 @@ $(hide) $(PRIVATE_CXX) \
 	-Wl,-z,nocopyreloc \
 	-fPIE -pie \
 	$(PRIVATE_TARGET_GLOBAL_LD_DIRS) \
-	-Wl,-rpath-link=$(TARGET_OUT_INTERMEDIATE_LIBRARIES) \
+	-Wl,-rpath-link=$(PRIVATE_TARGET_OUT_INTERMEDIATE_LIBRARIES) \
 	$(if $(filter true,$(PRIVATE_NO_CRT)),,$(PRIVATE_TARGET_CRTBEGIN_DYNAMIC_O)) \
 	$(PRIVATE_ALL_OBJECTS) \
 	-Wl,--whole-archive \

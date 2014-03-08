@@ -30,15 +30,6 @@
 # include defines, and compiler settings for the given architecture
 # version.
 #
-ifeq ($(strip $(TARGET_ARCH_VARIANT)),)
-  TARGET_ARCH_VARIANT := armv5te
-endif
-
-ifeq ($(strip $(TARGET_GCC_VERSION_EXP)),)
-  TARGET_GCC_VERSION := 4.8
-else
-  TARGET_GCC_VERSION := $(TARGET_GCC_VERSION_EXP)
-endif
 
 ifeq ($(strip $(TARGET_CFX_CLANG_VERSION_EXP)),)
   TARGET_CFX_CLANG_VERSION := 3.5
@@ -50,9 +41,15 @@ ifeq ($(strip $(TARGET_ARM_EABI_VERSION)),)
   TARGET_ARM_EABI_VERSION := 4.7
 endif
 
-TARGET_ARCH_SPECIFIC_MAKEFILE := $(BUILD_COMBOS)/arch/$(TARGET_ARCH)/$(TARGET_ARCH_VARIANT).mk
+ifeq ($(strip $(TARGET_GCC_VERSION_EXP)),)
+$(combo_2nd_arch_prefix)TARGET_GCC_VERSION := 4.8
+else
+$(combo_2nd_arch_prefix)TARGET_GCC_VERSION := $(TARGET_GCC_VERSION_EXP)
+endif
+
+TARGET_ARCH_SPECIFIC_MAKEFILE := $(BUILD_COMBOS)/arch/$(TARGET_$(combo_2nd_arch_prefix)ARCH)/$(TARGET_$(combo_2nd_arch_prefix)ARCH_VARIANT).mk
 ifeq ($(strip $(wildcard $(TARGET_ARCH_SPECIFIC_MAKEFILE))),)
-  $(error Unknown ARM architecture version: $(TARGET_ARCH_VARIANT))
+$(error Unknown ARM architecture version: $(TARGET_$(combo_2nd_arch_prefix)ARCH_VARIANT))
 endif
 
 ifeq ($(HOST_OS),linux)
@@ -64,29 +61,29 @@ endif
 include $(TARGET_ARCH_SPECIFIC_MAKEFILE)
 
 # You can set TARGET_TOOLS_PREFIX to get gcc from somewhere else
-ifeq ($(strip $(TARGET_TOOLS_PREFIX)),)
-  TARGET_TOOLCHAIN_ROOT := prebuilts/gcc/$(HOST_PREBUILT_TAG)/arm/arm-linux-androideabi-$(TARGET_GCC_VERSION)
-  TARGET_TOOLS_PREFIX := $(TARGET_TOOLCHAIN_ROOT)/bin/arm-linux-androideabi-
+ifeq ($(strip $($(combo_2nd_arch_prefix)TARGET_TOOLS_PREFIX)),)
+$(combo_2nd_arch_prefix)TARGET_TOOLCHAIN_ROOT := prebuilts/gcc/$(HOST_PREBUILT_TAG)/arm/arm-linux-androideabi-$($(combo_2nd_arch_prefix)TARGET_GCC_VERSION)
+$(combo_2nd_arch_prefix)TARGET_TOOLS_PREFIX := $($(combo_2nd_arch_prefix)TARGET_TOOLCHAIN_ROOT)/bin/arm-linux-androideabi-
 endif
 
-TARGET_CC := $(TARGET_TOOLS_PREFIX)gcc$(HOST_EXECUTABLE_SUFFIX)
-TARGET_CXX := $(TARGET_TOOLS_PREFIX)g++$(HOST_EXECUTABLE_SUFFIX)
-TARGET_AR := $(TARGET_TOOLS_PREFIX)ar$(HOST_EXECUTABLE_SUFFIX)
-TARGET_OBJCOPY := $(TARGET_TOOLS_PREFIX)objcopy$(HOST_EXECUTABLE_SUFFIX)
-TARGET_LD := $(TARGET_TOOLS_PREFIX)ld$(HOST_EXECUTABLE_SUFFIX)
-TARGET_STRIP := $(TARGET_TOOLS_PREFIX)strip$(HOST_EXECUTABLE_SUFFIX)
+$(combo_2nd_arch_prefix)TARGET_CC := $($(combo_2nd_arch_prefix)TARGET_TOOLS_PREFIX)gcc$(HOST_EXECUTABLE_SUFFIX)
+$(combo_2nd_arch_prefix)TARGET_CXX := $($(combo_2nd_arch_prefix)TARGET_TOOLS_PREFIX)g++$(HOST_EXECUTABLE_SUFFIX)
+$(combo_2nd_arch_prefix)TARGET_AR := $($(combo_2nd_arch_prefix)TARGET_TOOLS_PREFIX)ar$(HOST_EXECUTABLE_SUFFIX)
+$(combo_2nd_arch_prefix)TARGET_OBJCOPY := $($(combo_2nd_arch_prefix)TARGET_TOOLS_PREFIX)objcopy$(HOST_EXECUTABLE_SUFFIX)
+$(combo_2nd_arch_prefix)TARGET_LD := $($(combo_2nd_arch_prefix)TARGET_TOOLS_PREFIX)ld$(HOST_EXECUTABLE_SUFFIX)
+$(combo_2nd_arch_prefix)TARGET_STRIP := $($(combo_2nd_arch_prefix)TARGET_TOOLS_PREFIX)strip$(HOST_EXECUTABLE_SUFFIX)
 
 no_debug_variant := $(filter user codefirex,$(TARGET_BUILD_VARIANT))
 ifneq (,$(no_debug_variant))
-  TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-debug $< -o $@
+    $(combo_2nd_arch_prefix)TARGET_STRIP_COMMAND = $(PRIVATE_STRIP) --strip-all $< -o $@
 else
-  TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-debug $< -o $@ && \
-                         $(TARGET_OBJCOPY) --add-gnu-debuglink=$< $@
+    $(combo_2nd_arch_prefix)TARGET_STRIP_COMMAND = $(PRIVATE_STRIP) --strip-all $< -o $@ && \
+        $(PRIVATE_OBJCOPY) --add-gnu-debuglink=$< $@
 endif
 
-TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
+$(combo_2nd_arch_prefix)TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
 
-TARGET_arm_CFLAGS :=    -fomit-frame-pointer    \
+$(combo_2nd_arch_prefix)TARGET_arm_CFLAGS :=    -fomit-frame-pointer    \
                         -fstrict-aliasing       \
                         -funswitch-loops        \
                         -fstrict-aliasing       \
@@ -95,7 +92,7 @@ TARGET_arm_CFLAGS :=    -fomit-frame-pointer    \
                         -pipe
 
 # Modules can choose to compile some source as thumb.
-TARGET_thumb_CFLAGS :=  -mthumb                 \
+$(combo_2nd_arch_prefix)TARGET_thumb_CFLAGS :=  -mthumb                 \
                         -fomit-frame-pointer    \
                         -fstrict-aliasing       \
                         -Wstrict-aliasing=2     \
@@ -104,24 +101,18 @@ TARGET_thumb_CFLAGS :=  -mthumb                 \
 
 include $(BUILD_SYSTEM)/cfx_config.mk
 
-# NOTE: if you try to build a -O0 build with thumb, several
-# # of the libraries (libpv, libwebcore, libkjs) need to be built
-# # with -mlong-calls.  When built at -O0, those libraries are
-# # too big for a thumb "BL <label>" to go from one end to the other.
-TARGET_thumb_CFLAGS += -marm
-
 # Set FORCE_ARM_DEBUGGING to "true" in your buildspec.mk
 # or in your environment to force a full arm build, even for
 # files that are normally built as thumb; this can make
 # gdb debugging easier.  Don't forget to do a clean build.
 ifeq ($(FORCE_ARM_DEBUGGING),true)
-  TARGET_arm_CFLAGS += -fno-omit-frame-pointer -fno-strict-aliasing
-  TARGET_thumb_CFLAGS += -fno-omit-frame-pointer
+  $(combo_2nd_arch_prefix)TARGET_arm_CFLAGS += -fno-omit-frame-pointer -fno-strict-aliasing
+  $(combo_2nd_arch_prefix)TARGET_thumb_CFLAGS += -fno-omit-frame-pointer
 endif
 
 android_config_h := $(call select-android-config-h,linux-arm)
 
-TARGET_GLOBAL_CFLAGS += \
+$(combo_2nd_arch_prefix)TARGET_GLOBAL_CFLAGS += \
 			-msoft-float -fpic -fPIE \
 			-ffunction-sections \
 			-fdata-sections \
@@ -135,26 +126,17 @@ TARGET_GLOBAL_CFLAGS += \
 			-include $(android_config_h) \
 			-I $(dir $(android_config_h))
 
-# The "-Wunused-but-set-variable" option often breaks projects that enable
-# "-Wall -Werror" due to a commom idiom "ALOGV(mesg)" where ALOGV is turned
-# into no-op in some builds while mesg is defined earlier. So we explicitly
-# disable "-Wunused-but-set-variable" here.
-ifneq ($(filter 4.6 4.6.% 4.7 4.7.% 4.8, $(TARGET_GCC_VERSION)),)
-TARGET_GLOBAL_CFLAGS += -Wno-unused-but-set-variable -fno-builtin-sin \
-			-fno-strict-volatile-bitfields
-endif
-
-TARGET_GLOBAL_LDFLAGS += \
+$(combo_2nd_arch_prefix)TARGET_GLOBAL_LDFLAGS += \
 			-Wl,-z,noexecstack \
 			-Wl,-z,relro \
 			-Wl,-z,now \
 			-Wl,--warn-shared-textrel \
 			$(arch_variant_ldflags)
 
-TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
+$(combo_2nd_arch_prefix)TARGET_GLOBAL_CPPFLAGS += -fvisibility-inlines-hidden
 
 # More flags/options can be added here
-TARGET_RELEASE_CFLAGS := \
+$(combo_2nd_arch_prefix)TARGET_RELEASE_CFLAGS := \
 			-DNDEBUG \
 			-g \
 			-Wstrict-aliasing=2
@@ -162,59 +144,48 @@ TARGET_RELEASE_CFLAGS := \
 libc_root := bionic/libc
 libm_root := bionic/libm
 libstdc++_root := bionic/libstdc++
-libthread_db_root := bionic/libthread_db
 
 
 ## on some hosts, the target cross-compiler is not available so do not run this command
-ifneq ($(wildcard $(TARGET_CC)),)
+ifneq ($(wildcard $($(combo_2nd_arch_prefix)TARGET_CC)),)
 # We compile with the global cflags to ensure that
 # any flags which affect libgcc are correctly taken
 # into account.
-TARGET_LIBGCC := $(shell $(TARGET_CC) $(TARGET_GLOBAL_CFLAGS) -print-libgcc-file-name)
-target_libgcov := $(shell $(TARGET_CC) $(TARGET_GLOBAL_CFLAGS) \
+$(combo_2nd_arch_prefix)TARGET_LIBGCC := $(shell $($(combo_2nd_arch_prefix)TARGET_CC) \
+        $($(combo_2nd_arch_prefix)TARGET_GLOBAL_CFLAGS) -print-libgcc-file-name)
+target_libgcov := $(shell $($(combo_2nd_arch_prefix)TARGET_CC) $($(combo_2nd_arch_prefix)TARGET_GLOBAL_CFLAGS) \
         -print-file-name=libgcov.a)
 endif
 
 # inherit profiling options
 include $(BUILD_SYSTEM)/profiling_config.mk
 
-# unless CUSTOM_KERNEL_HEADERS is defined, we're going to use
-# symlinks located in out/ to point to the appropriate kernel
-# headers. see 'config/kernel_headers.make' for more details
-#
-ifneq ($(CUSTOM_KERNEL_HEADERS),)
-    KERNEL_HEADERS_COMMON := $(CUSTOM_KERNEL_HEADERS)
-    KERNEL_HEADERS_ARCH   := $(CUSTOM_KERNEL_HEADERS)
-else
-    KERNEL_HEADERS_COMMON := $(libc_root)/kernel/common
-    KERNEL_HEADERS_ARCH   := $(libc_root)/kernel/arch-$(TARGET_ARCH)
-    KERNEL_HEADERS_AUX    := $(libc_root)/kernel/uapi # for kexec.h
-endif
-KERNEL_HEADERS := $(KERNEL_HEADERS_COMMON) $(KERNEL_HEADERS_ARCH) $(KERNEL_HEADERS_AUX)
+KERNEL_HEADERS_COMMON := $(libc_root)/kernel/uapi
+KERNEL_HEADERS_ARCH   := $(libc_root)/kernel/uapi/asm-$(TARGET_$(combo_2nd_arch_prefix)ARCH)
+KERNEL_HEADERS := $(KERNEL_HEADERS_COMMON) $(KERNEL_HEADERS_ARCH)
 
-TARGET_C_INCLUDES := \
+$(combo_2nd_arch_prefix)TARGET_C_INCLUDES := \
 	$(libc_root)/arch-arm/include \
 	$(libc_root)/include \
 	$(libstdc++_root)/include \
 	$(KERNEL_HEADERS) \
 	$(libm_root)/include \
 	$(libm_root)/include/arm \
-	$(libthread_db_root)/include
 
-TARGET_CRTBEGIN_STATIC_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_static.o
-TARGET_CRTBEGIN_DYNAMIC_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_dynamic.o
-TARGET_CRTEND_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtend_android.o
+$(combo_2nd_arch_prefix)TARGET_CRTBEGIN_STATIC_O := $($(combo_2nd_arch_prefix)TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_static.o
+$(combo_2nd_arch_prefix)TARGET_CRTBEGIN_DYNAMIC_O := $($(combo_2nd_arch_prefix)TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_dynamic.o
+$(combo_2nd_arch_prefix)TARGET_CRTEND_O := $($(combo_2nd_arch_prefix)TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtend_android.o
 
-TARGET_CRTBEGIN_SO_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_so.o
-TARGET_CRTEND_SO_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtend_so.o
+$(combo_2nd_arch_prefix)TARGET_CRTBEGIN_SO_O := $($(combo_2nd_arch_prefix)TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_so.o
+$(combo_2nd_arch_prefix)TARGET_CRTEND_SO_O := $($(combo_2nd_arch_prefix)TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtend_so.o
 
-TARGET_STRIP_MODULE:=true
+$(combo_2nd_arch_prefix)TARGET_STRIP_MODULE:=true
 
-TARGET_DEFAULT_SYSTEM_SHARED_LIBRARIES := libc libstdc++ libm
+$(combo_2nd_arch_prefix)TARGET_DEFAULT_SYSTEM_SHARED_LIBRARIES := libc libstdc++ libm
 
-TARGET_CUSTOM_LD_COMMAND := true
+$(combo_2nd_arch_prefix)TARGET_CUSTOM_LD_COMMAND := true
 
-define transform-o-to-shared-lib-inner
+define $(combo_2nd_arch_prefix)transform-o-to-shared-lib-inner
 $(hide) $(PRIVATE_CXX) \
 	-nostdlib -Wl,-soname,$(notdir $@) \
 	-Wl,--gc-sections \
@@ -238,13 +209,13 @@ $(hide) $(PRIVATE_CXX) \
 	$(if $(filter true,$(PRIVATE_NO_CRT)),,$(PRIVATE_TARGET_CRTEND_SO_O))
 endef
 
-define transform-o-to-executable-inner
+define $(combo_2nd_arch_prefix)transform-o-to-executable-inner
 $(hide) $(PRIVATE_CXX) -nostdlib -Bdynamic -fPIE -pie \
 	-Wl,-dynamic-linker,/system/bin/linker \
 	-Wl,--gc-sections \
 	-Wl,-z,nocopyreloc \
 	$(PRIVATE_TARGET_GLOBAL_LD_DIRS) \
-	-Wl,-rpath-link=$(TARGET_OUT_INTERMEDIATE_LIBRARIES) \
+	-Wl,-rpath-link=$(PRIVATE_TARGET_OUT_INTERMEDIATE_LIBRARIES) \
 	$(if $(filter true,$(PRIVATE_NO_CRT)),,$(PRIVATE_TARGET_CRTBEGIN_DYNAMIC_O)) \
 	$(PRIVATE_ALL_OBJECTS) \
 	-Wl,--whole-archive \
@@ -263,7 +234,7 @@ $(hide) $(PRIVATE_CXX) -nostdlib -Bdynamic -fPIE -pie \
 	$(if $(filter true,$(PRIVATE_NO_CRT)),,$(PRIVATE_TARGET_CRTEND_O))
 endef
 
-define transform-o-to-static-executable-inner
+define $(combo_2nd_arch_prefix)transform-o-to-static-executable-inner
 $(hide) $(PRIVATE_CXX) -nostdlib -Bstatic \
 	-Wl,--gc-sections \
 	-o $@ \

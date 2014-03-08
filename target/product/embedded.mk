@@ -22,6 +22,7 @@ PRODUCT_PACKAGES += \
     adbd \
     bootanimation \
     debuggerd \
+    debuggerd64 \
     dumpstate \
     dumpsys \
     gralloc.default \
@@ -55,10 +56,10 @@ PRODUCT_PACKAGES += \
     libsurfaceflinger \
     libsurfaceflinger_ddmconnection \
     libsysutils \
-    libthread_db \
     libui \
     libutils \
     linker \
+    linker64 \
     logcat \
     logwrapper \
     mkshrc \

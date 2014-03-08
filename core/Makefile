@@ -1,5 +1,9 @@
 # Put some miscellaneous rules here
 
+# HACK: clear LOCAL_PATH from including last build target before calling
+# intermedites-dir-for
+LOCAL_PATH := $(BUILD_SYSTEM)
+
 # Build system colors
 #
 # PFX: Prefix "target C++:" in yellow
@@ -380,6 +384,22 @@ ALL_DEFAULT_INSTALLED_MODULES += $(event_log_tags_file)
 # #################################################################
 # Targets for boot/OS images
 # #################################################################
+ifneq ($(strip $(TARGET_NO_BOOTLOADER)),true)
+  INSTALLED_BOOTLOADER_MODULE := $(PRODUCT_OUT)/bootloader
+  ifeq ($(strip $(TARGET_BOOTLOADER_IS_2ND)),true)
+    INSTALLED_2NDBOOTLOADER_TARGET := $(PRODUCT_OUT)/2ndbootloader
+  else
+    INSTALLED_2NDBOOTLOADER_TARGET :=
+  endif
+else
+  INSTALLED_BOOTLOADER_MODULE :=
+  INSTALLED_2NDBOOTLOADER_TARGET :=
+endif # TARGET_NO_BOOTLOADER
+ifneq ($(strip $(TARGET_NO_KERNEL)),true)
+  INSTALLED_KERNEL_TARGET := $(PRODUCT_OUT)/kernel
+else
+  INSTALLED_KERNEL_TARGET :=
+endif
 
 # -----------------------------------------------------------------
 # the ramdisk
@@ -1500,7 +1520,7 @@ $(APPS_ZIP): $(INSTALLED_SYSTEMIMAGE)
 	@echo "Package apps: $@"
 	$(hide) rm -rf $@
 	$(hide) mkdir -p $(dir $@)
-	$(hide) zip -qj $@ $(TARGET_OUT_APPS)/*
+	$(hide) zip -qj $@ $(TARGET_OUT_APPS)/* $(TARGET_OUT_APPS_PRIVILEGED)/*
 
 
 #------------------------------------------------------------------

@@ -41,6 +41,8 @@ else
   my_host :=
 endif
 
+my_module_tags := $(LOCAL_MODULE_TAGS)
+
 ###########################################################
 ## Validate and define fallbacks for input LOCAL_* variables.
 ###########################################################
@@ -50,17 +52,17 @@ endif
 #$(shell rm -f tag-list.csv)
 #tag-list-first-time := false
 #endif
-#$(shell echo $(lastword $(filter-out config/% out/%,$(MAKEFILE_LIST))),$(LOCAL_MODULE),$(strip $(LOCAL_MODULE_CLASS)),$(subst $(space),$(comma),$(sort $(LOCAL_MODULE_TAGS))) >> tag-list.csv)
+#$(shell echo $(lastword $(filter-out config/% out/%,$(MAKEFILE_LIST))),$(LOCAL_MODULE),$(strip $(LOCAL_MODULE_CLASS)),$(subst $(space),$(comma),$(sort $(my_module_tags))) >> tag-list.csv)
 
 LOCAL_UNINSTALLABLE_MODULE := $(strip $(LOCAL_UNINSTALLABLE_MODULE))
-LOCAL_MODULE_TAGS := $(sort $(LOCAL_MODULE_TAGS))
-ifeq (,$(LOCAL_MODULE_TAGS))
-  LOCAL_MODULE_TAGS := optional
+my_module_tags := $(sort $(my_module_tags))
+ifeq (,$(my_module_tags))
+  my_module_tags := optional
 endif
 
 # User tags are not allowed anymore.  Fail early because it will not be installed
 # like it used to be.
-ifneq ($(filter $(LOCAL_MODULE_TAGS),user),)
+ifneq ($(filter $(my_module_tags),user),)
   $(warning *** Module name: $(LOCAL_MODULE))
   $(warning *** Makefile location: $(LOCAL_MODULE_MAKEFILE))
   $(warning * )
@@ -75,8 +77,8 @@ endif
 # Only the tags mentioned in this test are expected to be set by module
 # makefiles. Anything else is either a typo or a source of unexpected
 # behaviors.
-ifneq ($(filter-out debug eng tests codefirex optional samples,$(LOCAL_MODULE_TAGS)),)
-$(warning unusual tags $(LOCAL_MODULE_TAGS) on $(LOCAL_MODULE) at $(LOCAL_PATH))
+ifneq ($(filter-out debug eng tests codefirex optional samples,$(my_module_tags)),)
+$(warning unusual tags $(my_module_tags) on $(LOCAL_MODULE) at $(LOCAL_PATH))
 endif
 
 # Add implicit tags.
@@ -88,7 +90,7 @@ endif
 #
 gpl_license_file := $(call find-parent-file,$(LOCAL_PATH),MODULE_LICENSE*_GPL* MODULE_LICENSE*_MPL*)
 ifneq ($(gpl_license_file),)
-  LOCAL_MODULE_TAGS += gnu
+  my_module_tags += gnu
   ALL_GPL_MODULE_LICENSE_FILES := $(sort $(ALL_GPL_MODULE_LICENSE_FILES) $(gpl_license_file))
 endif
 
@@ -98,8 +100,9 @@ ifneq ($(words $(LOCAL_MODULE_CLASS)),1)
 endif
 
 ifneq (true,$(LOCAL_UNINSTALLABLE_MODULE))
-LOCAL_MODULE_PATH := $(strip $(LOCAL_MODULE_PATH))
-ifeq ($(LOCAL_MODULE_PATH),)
+my_module_path := $(strip $(LOCAL_MODULE_PATH))
+my_module_relative_path := $(strip $(LOCAL_MODULE_RELATIVE_PATH))
+ifeq ($(my_module_path),)
   ifdef LOCAL_IS_HOST_MODULE
     partition_tag :=
   else
@@ -108,18 +111,21 @@ ifeq ($(LOCAL_MODULE_PATH),)
   else
     # The definition of should-install-to-system will be different depending
     # on which goal (e.g., sdk or just droid) is being built.
-    partition_tag := $(if $(call should-install-to-system,$(LOCAL_MODULE_TAGS)),,_DATA)
+    partition_tag := $(if $(call should-install-to-system,$(my_module_tags)),,_DATA)
   endif
   endif
-  install_path_var := $(my_prefix)OUT$(partition_tag)_$(LOCAL_MODULE_CLASS)
+  install_path_var := $(LOCAL_2ND_ARCH_VAR_PREFIX)$(my_prefix)OUT$(partition_tag)_$(LOCAL_MODULE_CLASS)
   ifeq (true,$(LOCAL_PRIVILEGED_MODULE))
     install_path_var := $(install_path_var)_PRIVILEGED
   endif
 
-  LOCAL_MODULE_PATH := $($(install_path_var))
-  ifeq ($(strip $(LOCAL_MODULE_PATH)),)
-    $(error $(LOCAL_PATH): unhandled install path "$(install_path_var)")
+  my_module_path := $($(install_path_var))
+  ifeq ($(strip $(my_module_path)),)
+    $(error $(LOCAL_PATH): unhandled install path "$(install_path_var) for $(LOCAL_MODULE)")
   endif
+endif
+ifneq ($(my_module_relative_path),)
+  my_module_path := $(my_module_path)/$(my_module_relative_path)
 endif
 endif # not LOCAL_UNINSTALLABLE_MODULE
 
@@ -127,16 +133,23 @@ ifneq ($(strip $(LOCAL_BUILT_MODULE)$(LOCAL_INSTALLED_MODULE)),)
   $(error $(LOCAL_PATH): LOCAL_BUILT_MODULE and LOCAL_INSTALLED_MODULE must not be defined by component makefiles)
 endif
 
+my_register_name := $(LOCAL_MODULE)
+ifdef LOCAL_2ND_ARCH_VAR_PREFIX
+ifndef LOCAL_NO_2ND_ARCH_MODULE_SUFFIX
+my_register_name := $(LOCAL_MODULE)$(TARGET_2ND_ARCH_MODULE_SUFFIX)
+endif
+endif
 # Make sure that this IS_HOST/CLASS/MODULE combination is unique.
 module_id := MODULE.$(if \
-    $(LOCAL_IS_HOST_MODULE),HOST,TARGET).$(LOCAL_MODULE_CLASS).$(LOCAL_MODULE)
+    $(LOCAL_IS_HOST_MODULE),HOST,TARGET).$(LOCAL_MODULE_CLASS).$(my_register_name)
 ifdef $(module_id)
 $(error $(LOCAL_PATH): $(module_id) already defined by $($(module_id)))
 endif
 $(module_id) := $(LOCAL_PATH)
 
-intermediates := $(call local-intermediates-dir)
+intermediates := $(call local-intermediates-dir,,$(LOCAL_2ND_ARCH_VAR_PREFIX))
 intermediates.COMMON := $(call local-intermediates-dir,COMMON)
+generated_sources_dir := $(call local-generated-sources-dir)
 
 ###########################################################
 # Pick a name for the intermediate and final targets
@@ -168,7 +181,7 @@ LOCAL_BUILT_MODULE := $(built_module_path)/$(LOCAL_BUILT_MODULE_STEM)
 built_module_path :=
 
 ifneq (true,$(LOCAL_UNINSTALLABLE_MODULE))
-  LOCAL_INSTALLED_MODULE := $(LOCAL_MODULE_PATH)/$(LOCAL_INSTALLED_MODULE_STEM)
+  LOCAL_INSTALLED_MODULE := $(my_module_path)/$(LOCAL_INSTALLED_MODULE_STEM)
 endif
 
 # Assemble the list of targets to create PRIVATE_ variables for.
@@ -459,8 +472,8 @@ endif  # need_compile_java
 ###########################################################
 ## make clean- targets
 ###########################################################
-cleantarget := clean-$(LOCAL_MODULE)
-$(cleantarget) : PRIVATE_MODULE := $(LOCAL_MODULE)
+cleantarget := clean-$(my_register_name)
+$(cleantarget) : PRIVATE_MODULE := $(my_register_name)
 $(cleantarget) : PRIVATE_CLEAN_FILES := \
     $(LOCAL_BUILT_MODULE) \
     $(LOCAL_INSTALLED_MODULE) \
@@ -502,13 +515,13 @@ $(LOCAL_INTERMEDIATE_TARGETS) : PRIVATE_HOST:= $(my_host)
 $(LOCAL_INTERMEDIATE_TARGETS) : PRIVATE_INTERMEDIATES_DIR:= $(intermediates)
 
 # Tell the module and all of its sub-modules who it is.
-$(LOCAL_INTERMEDIATE_TARGETS) : PRIVATE_MODULE:= $(LOCAL_MODULE)
+$(LOCAL_INTERMEDIATE_TARGETS) : PRIVATE_MODULE:= $(my_register_name)
 
 # Provide a short-hand for building this module.
 # We name both BUILT and INSTALLED in case
 # LOCAL_UNINSTALLABLE_MODULE is set.
-.PHONY: $(LOCAL_MODULE)
-$(LOCAL_MODULE): $(LOCAL_BUILT_MODULE) $(LOCAL_INSTALLED_MODULE)
+.PHONY: $(my_register_name)
+$(my_register_name): $(LOCAL_BUILT_MODULE) $(LOCAL_INSTALLED_MODULE)
 
 ###########################################################
 ## Module installation rule
@@ -535,15 +548,6 @@ $(LOCAL_INSTALLED_MODULE): $(LOCAL_BUILT_MODULE)
 	$(copy-file-to-target-with-cp)
 endif
 
-ifdef LOCAL_DEX_PREOPT
-installed_odex := $(basename $(LOCAL_INSTALLED_MODULE)).odex
-built_odex := $(basename $(LOCAL_BUILT_MODULE)).odex
-$(installed_odex) : $(built_odex) $(LOCAL_BUILT_MODULE) | $(ACP)
-        @echo -e ${CL_INS}"Install: $@"${CL_RST}
-	$(copy-file-to-target)
-
-$(LOCAL_INSTALLED_MODULE) : $(installed_odex)
-endif
 endif # !LOCAL_UNINSTALLABLE_MODULE
 
 
@@ -567,60 +571,68 @@ endif
 ifdef LOCAL_DONT_CHECK_MODULE
   LOCAL_CHECKED_MODULE :=
 endif
+# Don't check build the module defined for the 2nd arch
+ifdef LOCAL_2ND_ARCH_VAR_PREFIX
+  LOCAL_CHECKED_MODULE :=
+endif
 
 ###########################################################
 ## Register with ALL_MODULES
 ###########################################################
 
-ALL_MODULES += $(LOCAL_MODULE)
+ALL_MODULES += $(my_register_name)
 
 # Don't use += on subvars, or else they'll end up being
 # recursively expanded.
-ALL_MODULES.$(LOCAL_MODULE).CLASS := \
-    $(ALL_MODULES.$(LOCAL_MODULE).CLASS) $(LOCAL_MODULE_CLASS)
-ALL_MODULES.$(LOCAL_MODULE).PATH := \
-    $(ALL_MODULES.$(LOCAL_MODULE).PATH) $(LOCAL_PATH)
-ALL_MODULES.$(LOCAL_MODULE).TAGS := \
-    $(ALL_MODULES.$(LOCAL_MODULE).TAGS) $(LOCAL_MODULE_TAGS)
-ALL_MODULES.$(LOCAL_MODULE).CHECKED := \
-    $(ALL_MODULES.$(LOCAL_MODULE).CHECKED) $(LOCAL_CHECKED_MODULE)
-ALL_MODULES.$(LOCAL_MODULE).BUILT := \
-    $(ALL_MODULES.$(LOCAL_MODULE).BUILT) $(LOCAL_BUILT_MODULE)
-ALL_MODULES.$(LOCAL_MODULE).INSTALLED := \
-    $(strip $(ALL_MODULES.$(LOCAL_MODULE).INSTALLED) $(LOCAL_INSTALLED_MODULE))
-ALL_MODULES.$(LOCAL_MODULE).REQUIRED := \
-    $(ALL_MODULES.$(LOCAL_MODULE).REQUIRED) $(LOCAL_REQUIRED_MODULES)
-ALL_MODULES.$(LOCAL_MODULE).EVENT_LOG_TAGS := \
-    $(ALL_MODULES.$(LOCAL_MODULE).EVENT_LOG_TAGS) $(event_log_tags)
-ALL_MODULES.$(LOCAL_MODULE).INTERMEDIATE_SOURCE_DIR := \
-    $(ALL_MODULES.$(LOCAL_MODULE).INTERMEDIATE_SOURCE_DIR) $(LOCAL_INTERMEDIATE_SOURCE_DIR)
-ALL_MODULES.$(LOCAL_MODULE).MAKEFILE := \
-    $(ALL_MODULES.$(LOCAL_MODULE).MAKEFILE) $(LOCAL_MODULE_MAKEFILE)
+ALL_MODULES.$(my_register_name).CLASS := \
+    $(ALL_MODULES.$(my_register_name).CLASS) $(LOCAL_MODULE_CLASS)
+ALL_MODULES.$(my_register_name).PATH := \
+    $(ALL_MODULES.$(my_register_name).PATH) $(LOCAL_PATH)
+ALL_MODULES.$(my_register_name).TAGS := \
+    $(ALL_MODULES.$(my_register_name).TAGS) $(my_module_tags)
+ALL_MODULES.$(my_register_name).CHECKED := \
+    $(ALL_MODULES.$(my_register_name).CHECKED) $(LOCAL_CHECKED_MODULE)
+ALL_MODULES.$(my_register_name).BUILT := \
+    $(ALL_MODULES.$(my_register_name).BUILT) $(LOCAL_BUILT_MODULE)
+ALL_MODULES.$(my_register_name).INSTALLED := \
+    $(strip $(ALL_MODULES.$(my_register_name).INSTALLED) $(LOCAL_INSTALLED_MODULE))
+ALL_MODULES.$(my_register_name).REQUIRED := \
+    $(strip $(ALL_MODULES.$(my_register_name).REQUIRED) $(LOCAL_REQUIRED_MODULES) \
+      $(LOCAL_REQUIRED_MODULES_$(TARGET_$(LOCAL_2ND_ARCH_VAR_PREFIX)ARCH)))
+ALL_MODULES.$(my_register_name).EVENT_LOG_TAGS := \
+    $(ALL_MODULES.$(my_register_name).EVENT_LOG_TAGS) $(event_log_tags)
+ALL_MODULES.$(my_register_name).INTERMEDIATE_SOURCE_DIR := \
+    $(ALL_MODULES.$(my_register_name).INTERMEDIATE_SOURCE_DIR) $(LOCAL_INTERMEDIATE_SOURCE_DIR)
+ALL_MODULES.$(my_register_name).MAKEFILE := \
+    $(ALL_MODULES.$(my_register_name).MAKEFILE) $(LOCAL_MODULE_MAKEFILE)
 ifdef LOCAL_MODULE_OWNER
-ALL_MODULES.$(LOCAL_MODULE).OWNER := \
-    $(sort $(ALL_MODULES.$(LOCAL_MODULE).OWNER) $(LOCAL_MODULE_OWNER))
+ALL_MODULES.$(my_register_name).OWNER := \
+    $(sort $(ALL_MODULES.$(my_register_name).OWNER) $(LOCAL_MODULE_OWNER))
+endif
+ifdef LOCAL_2ND_ARCH_VAR_PREFIX
+ALL_MODULES.$(my_register_name).FOR_2ND_ARCH := true
 endif
 
-INSTALLABLE_FILES.$(LOCAL_INSTALLED_MODULE).MODULE := $(LOCAL_MODULE)
+INSTALLABLE_FILES.$(LOCAL_INSTALLED_MODULE).MODULE := $(my_register_name)
 
 ###########################################################
-## Take care of LOCAL_MODULE_TAGS
+## Take care of my_module_tags
 ###########################################################
 
 # Keep track of all the tags we've seen.
-ALL_MODULE_TAGS := $(sort $(ALL_MODULE_TAGS) $(LOCAL_MODULE_TAGS))
+ALL_MODULE_TAGS := $(sort $(ALL_MODULE_TAGS) $(my_module_tags))
 
 # Add this module to the tag list of each specified tag.
 # Don't use "+=". If the variable hasn't been set with ":=",
 # it will default to recursive expansion.
-$(foreach tag,$(LOCAL_MODULE_TAGS),\
+$(foreach tag,$(my_module_tags),\
     $(eval ALL_MODULE_TAGS.$(tag) := \
         $(ALL_MODULE_TAGS.$(tag)) \
         $(LOCAL_INSTALLED_MODULE)))
 
 # Add this module name to the tag list of each specified tag.
-$(foreach tag,$(LOCAL_MODULE_TAGS),\
-    $(eval ALL_MODULE_NAME_TAGS.$(tag) += $(LOCAL_MODULE)))
+$(foreach tag,$(my_module_tags),\
+    $(eval ALL_MODULE_NAME_TAGS.$(tag) += $(my_register_name)))
 
 ###########################################################
 ## umbrella targets used to verify builds
@@ -641,7 +653,7 @@ endif
 
 ifdef j_or_n
 $(j_or_n) $(h_or_t) $(j_or_n)-$(h_or_t) : $(LOCAL_CHECKED_MODULE)
-ifneq (,$(filter $(LOCAL_MODULE_TAGS),tests))
+ifneq (,$(filter $(my_module_tags),tests))
 $(j_or_n)-$(h_or_t)-tests $(j_or_n)-tests $(h_or_t)-tests : $(LOCAL_CHECKED_MODULE)
 endif
 endif

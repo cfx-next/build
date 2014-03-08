@@ -80,6 +80,12 @@ BUILD_DROIDDOC:= $(BUILD_SYSTEM)/droiddoc.mk
 BUILD_COPY_HEADERS := $(BUILD_SYSTEM)/copy_headers.mk
 BUILD_NATIVE_TEST := $(BUILD_SYSTEM)/native_test.mk
 BUILD_HOST_NATIVE_TEST := $(BUILD_SYSTEM)/host_native_test.mk
+
+BUILD_SHARED_TEST_LIBRARY := $(BUILD_SYSTEM)/shared_test_lib.mk
+BUILD_HOST_SHARED_TEST_LIBRARY := $(BUILD_SYSTEM)/host_shared_test_lib.mk
+BUILD_STATIC_TEST_LIBRARY := $(BUILD_SYSTEM)/static_test_lib.mk
+BUILD_HOST_STATIC_TEST_LIBRARY := $(BUILD_SYSTEM)/host_static_test_lib.mk
+
 BUILD_NOTICE_FILE := $(BUILD_SYSTEM)/notice_files.mk
 BUILD_HOST_DALVIK_JAVA_LIBRARY := $(BUILD_SYSTEM)/host_dalvik_java_library.mk
 BUILD_HOST_DALVIK_STATIC_JAVA_LIBRARY := $(BUILD_SYSTEM)/host_dalvik_static_java_library.mk
@@ -140,29 +146,6 @@ include $(BUILD_SYSTEM)/envsetup.mk
 
 # Useful macros
 include $(BUILD_SYSTEM)/linaro_compilerchecks.mk
-
-# Boards may be defined under $(SRC_TARGET_DIR)/board/$(TARGET_DEVICE)
-# or under vendor/*/$(TARGET_DEVICE).  Search in both places, but
-# make sure only one exists.
-# Real boards should always be associated with an OEM vendor.
-board_config_mk := \
-	$(strip $(wildcard \
-		$(SRC_TARGET_DIR)/board/$(TARGET_DEVICE)/BoardConfig.mk \
-		$(shell test -d device && find device -maxdepth 4 -path '*/$(TARGET_DEVICE)/BoardConfig.mk') \
-		$(shell test -d vendor && find vendor -maxdepth 4 -path '*/$(TARGET_DEVICE)/BoardConfig.mk') \
-	))
-ifeq ($(board_config_mk),)
-  $(error No config file found for TARGET_DEVICE $(TARGET_DEVICE))
-endif
-ifneq ($(words $(board_config_mk)),1)
-  $(error Multiple board config files for TARGET_DEVICE $(TARGET_DEVICE): $(board_config_mk))
-endif
-include $(board_config_mk)
-ifeq ($(TARGET_ARCH),)
-  $(error TARGET_ARCH not defined by board config: $(board_config_mk))
-endif
-TARGET_DEVICE_DIR := $(patsubst %/,%,$(dir $(board_config_mk)))
-board_config_mk :=
 
 # Perhaps we should move this block to build/core/Makefile,
 # once we don't have TARGET_NO_KERNEL reference in AndroidBoard.mk/Android.mk.
@@ -258,13 +241,22 @@ build/core/combo/include/arch/$(1)/AndroidConfig.h
 endef
 
 combo_target := HOST_
+combo_2nd_arch_prefix :=
 include $(BUILD_SYSTEM)/combo/select.mk
 
 # on windows, the tools have .exe at the end, and we depend on the
 # host config stuff being done first
 
 combo_target := TARGET_
+combo_2nd_arch_prefix :=
 include $(BUILD_SYSTEM)/combo/select.mk
+
+# Load the 2nd target arch if it's needed.
+ifdef TARGET_2ND_ARCH
+combo_target := TARGET_
+combo_2nd_arch_prefix := $(TARGET_2ND_ARCH_VAR_PREFIX)
+include $(BUILD_SYSTEM)/combo/select.mk
+endif
 
 # Compute TARGET_TOOLCHAIN_ROOT from TARGET_TOOLS_PREFIX
 # if only TARGET_TOOLS_PREFIX is passed to the make command.
@@ -283,7 +275,7 @@ ifeq ($(strip $(WITH_SYNTAX_CHECK)),0)
 endif
 
 # Disable WITH_STATIC_ANALYZER and WITH_SYNTAX_CHECK if tool can't be found
-SYNTAX_TOOLS_PREFIX := prebuilts/clang/$(HOST_PREBUILT_TAG)/host/3.3/bin
+SYNTAX_TOOLS_PREFIX := prebuilts/misc/$(HOST_PREBUILT_TAG)/analyzer/bin
 ifneq ($(strip $(WITH_STATIC_ANALYZER)),)
   ifeq ($(wildcard $(SYNTAX_TOOLS_PREFIX)/ccc-analyzer),)
     $(warning *** Disable WITH_STATIC_ANALYZER because $(SYNTAX_TOOLS_PREFIX)/ccc-analyzer does not exist)
@@ -372,8 +364,6 @@ PROGUARD := external/proguard/bin/proguard.sh
 JAVATAGS := build/tools/java-event-log-tags.py
 LLVM_RS_CC := $(HOST_OUT_EXECUTABLES)/llvm-rs-cc$(HOST_EXECUTABLE_SUFFIX)
 BCC_COMPAT := $(HOST_OUT_EXECUTABLES)/bcc_compat$(HOST_EXECUTABLE_SUFFIX)
-DEXOPT := $(HOST_OUT_EXECUTABLES)/dexopt$(HOST_EXECUTABLE_SUFFIX)
-DEXPREOPT := dalvik/tools/dex-preopt
 LINT := prebuilts/sdk/tools/lint
 
 # ACP is always for the build OS, not for the host OS
@@ -479,13 +469,26 @@ HOST_GLOBAL_CPPFLAGS += $(HOST_RELEASE_CPPFLAGS)
 TARGET_GLOBAL_CFLAGS += $(TARGET_RELEASE_CFLAGS) $(TARGET_EXTRA_CFLAGS)
 TARGET_GLOBAL_CPPFLAGS += $(TARGET_RELEASE_CPPFLAGS) $(TARGET_EXTRA_CPPFLAGS)
 
+ifdef TARGET_2ND_ARCH
+$(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_GLOBAL_CFLAGS += $(COMMON_GLOBAL_CFLAGS)
+$(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_RELEASE_CFLAGS += $(COMMON_RELEASE_CFLAGS)
+$(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_GLOBAL_CPPFLAGS += $(COMMON_GLOBAL_CPPFLAGS)
+$(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_RELEASE_CPPFLAGS += $(COMMON_RELEASE_CPPFLAGS)
+$(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_GLOBAL_LD_DIRS += -L$($(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_OUT_INTERMEDIATE_LIBRARIES)
+$(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_PROJECT_INCLUDES := $(TARGET_PROJECT_INCLUDES)
+$(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_GLOBAL_CFLAGS += $(TARGET_ERROR_FLAGS)
+$(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_GLOBAL_CPPFLAGS += $(TARGET_ERROR_FLAGS)
+$(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_GLOBAL_CFLAGS += $($(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_RELEASE_CFLAGS)
+$(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_GLOBAL_CPPFLAGS += $($(TARGET_2ND_ARCH_VAR_PREFIX)TARGET_RELEASE_CPPFLAGS)
+endif
+
 # allow overriding default Java libraries on a per-target basis
 ifeq ($(TARGET_DEFAULT_JAVA_LIBRARIES),)
   TARGET_DEFAULT_JAVA_LIBRARIES := core core-junit ext framework framework2
 endif
 
-# define llvm tools and global flags
-include $(BUILD_SYSTEM)/llvm_config.mk
+# define clang/llvm tools and global flags
+include $(BUILD_SYSTEM)/clang/config.mk
 
 # ###############################################################
 # Collect a list of the SDK versions that we could compile against

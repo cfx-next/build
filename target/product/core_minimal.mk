@@ -37,6 +37,7 @@ PRODUCT_PACKAGES += \
     com.android.media.remotedisplay.xml \
     drmserver \
     framework-res \
+    idmap \
     installd \
     ip \
     ip-up-vpn \
@@ -56,15 +57,29 @@ PRODUCT_PACKAGES += \
     libwilhelm \
     libz \
     lz4c \
+    logd \
     make_ext4fs \
     perf \
     screencap \
     sensorservice \
     uiautomator
 
-PRODUCT_BOOT_JARS := core:conscrypt:okhttp:core-junit:bouncycastle:ext:framework:framework2:android.policy:services:apache-xml:webviewchromium
+# The order of PRODUCT_BOOT_JARS matters.
+PRODUCT_BOOT_JARS := \
+    core \
+    conscrypt \
+    okhttp \
+    core-junit \
+    bouncycastle \
+    ext \
+    framework \
+    framework2 \
+    android.policy \
+    services \
+    apache-xml \
+    webviewchromium
 
-PRODUCT_RUNTIMES := runtime_libdvm_default
-PRODUCT_RUNTIMES += runtime_libart
+PRODUCT_RUNTIMES := runtime_libart_default
+PRODUCT_RUNTIMES += runtime_libdvm
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/base.mk)
