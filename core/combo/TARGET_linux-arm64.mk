@@ -71,21 +71,23 @@ TARGET_OBJCOPY := $(TARGET_TOOLS_PREFIX)objcopy$(HOST_EXECUTABLE_SUFFIX)
 TARGET_LD := $(TARGET_TOOLS_PREFIX)ld$(HOST_EXECUTABLE_SUFFIX)
 TARGET_STRIP := $(TARGET_TOOLS_PREFIX)strip$(HOST_EXECUTABLE_SUFFIX)
 ifeq ($(TARGET_BUILD_VARIANT),user)
-    TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-all $< -o $@
+    TARGET_STRIP_COMMAND = $(PRIVATE_STRIP) --strip-all $< -o $@
 else
-    TARGET_STRIP_COMMAND = $(TARGET_STRIP) --strip-all $< -o $@ && \
-        $(TARGET_OBJCOPY) --add-gnu-debuglink=$< $@
+    TARGET_STRIP_COMMAND = $(PRIVATE_STRIP) --strip-all $< -o $@ && \
+        $(PRIVATE_OBJCOPY) --add-gnu-debuglink=$< $@
 endif
 
 TARGET_NO_UNDEFINED_LDFLAGS := -Wl,--no-undefined
 
-android_config_h := $(call select-android-config-h,linux-aarch64)
-
 TARGET_GLOBAL_CFLAGS += \
-			-fpic -fPIE \
-			$(arch_variant_cflags) \
-			-include $(android_config_h) \
-			-I $(dir $(android_config_h))
+    -fno-strict-aliasing \
+
+android_config_h := $(call select-android-config-h,linux-arm64)
+
+# HACK: globally disable -fstack-protector until the toolchain supports it
+TARGET_GLOBAL_UNSUPPORTED_CFLAGS := \
+    -fstack-protector \
+    -fstack-protector-all \
 
 TARGET_GLOBAL_CFLAGS += \
 			-fpic -fPIE \
@@ -99,6 +101,11 @@ TARGET_GLOBAL_CFLAGS += \
 			$(arch_variant_cflags) \
 			-include $(android_config_h) \
 			-I $(dir $(android_config_h))
+
+# Help catch common 32/64-bit errors.
+TARGET_GLOBAL_CFLAGS += \
+    -Werror=pointer-to-int-cast \
+    -Werror=int-to-pointer-cast \
 
 TARGET_GLOBAL_CFLAGS += -fno-strict-volatile-bitfields
 
@@ -134,7 +141,6 @@ TARGET_RELEASE_CFLAGS := \
 libc_root := bionic/libc
 libm_root := bionic/libm
 libstdc++_root := bionic/libstdc++
-libthread_db_root := bionic/libthread_db
 
 TARGET_LIBGCC := $(shell $(TARGET_CC) $(TARGET_GLOBAL_CFLAGS) \
 	-print-libgcc-file-name)
@@ -144,29 +150,17 @@ target_libgcov := $(shell $(TARGET_CC) $(TARGET_GLOBAL_CFLAGS) \
 # inherit profiling options
 include $(BUILD_SYSTEM)/profiling_config.mk
 
-# unless CUSTOM_KERNEL_HEADERS is defined, we're going to use
-# symlinks located in out/ to point to the appropriate kernel
-# headers. see 'config/kernel_headers.make' for more details
-#
-ifneq ($(CUSTOM_KERNEL_HEADERS),)
-    KERNEL_HEADERS_COMMON := $(CUSTOM_KERNEL_HEADERS)
-    KERNEL_HEADERS_ARCH   := $(CUSTOM_KERNEL_HEADERS)
-    KERNEL_HEADERS_AUX    := $(CUSTOM_KERNEL_HEADERS)
-else
-    KERNEL_HEADERS_COMMON := $(libc_root)/kernel/uapi
-    KERNEL_HEADERS_ARCH   := $(libc_root)/kernel/uapi/asm-$(TARGET_ARCH)
-    KERNEL_HEADERS_AUX    := $(libc_root)/kernel/common
-endif
-KERNEL_HEADERS := $(KERNEL_HEADERS_COMMON) $(KERNEL_HEADERS_ARCH) $(KERNEL_HEADERS_AUX)
+KERNEL_HEADERS_COMMON := $(libc_root)/kernel/uapi
+KERNEL_HEADERS_ARCH   := $(libc_root)/kernel/uapi/asm-$(TARGET_ARCH)
+KERNEL_HEADERS := $(KERNEL_HEADERS_COMMON) $(KERNEL_HEADERS_ARCH)
 
 TARGET_C_INCLUDES := \
-	$(libc_root)/arch-aarch64/include \
+	$(libc_root)/arch-arm64/include \
 	$(libc_root)/include \
 	$(libstdc++_root)/include \
 	$(KERNEL_HEADERS) \
 	$(libm_root)/include \
-	$(libm_root)/include/aarch64 \
-	$(libthread_db_root)/include
+	$(libm_root)/include/arm64 \
 
 TARGET_CRTBEGIN_STATIC_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_static.o
 TARGET_CRTBEGIN_DYNAMIC_O := $(TARGET_OUT_INTERMEDIATE_LIBRARIES)/crtbegin_dynamic.o
@@ -209,7 +203,7 @@ $(hide) $(PRIVATE_CXX) -nostdlib -Bdynamic -fPIE -pie \
 	-Wl,-dynamic-linker,/system/bin/linker64 \
 	-Wl,-z,nocopyreloc \
 	$(PRIVATE_TARGET_GLOBAL_LD_DIRS) \
-	-Wl,-rpath-link=$(TARGET_OUT_INTERMEDIATE_LIBRARIES) \
+	-Wl,-rpath-link=$(PRIVATE_TARGET_OUT_INTERMEDIATE_LIBRARIES) \
 	$(if $(filter true,$(PRIVATE_NO_CRT)),,$(PRIVATE_TARGET_CRTBEGIN_DYNAMIC_O)) \
 	$(PRIVATE_ALL_OBJECTS) \
 	-Wl,--whole-archive \

@@ -15,7 +15,7 @@
  */
 
 /*
- * Android config -- "android-aarch64".  Used for ARM aarch64 device builds.
+ * Android config -- "android-mips64".  Used for MIPS device builds.
  */
 #ifndef _ANDROID_CONFIG_H
 #define _ANDROID_CONFIG_H
@@ -122,7 +122,7 @@
 /*
  * Define this if we have localtime_r().
  */
-/* #define HAVE_LOCALTIME_R 1 */
+/* #define HAVE_LOCALTIME_R */
 
 /*
  * Define this if we have gethostbyname_r().
@@ -166,7 +166,7 @@
 #define HAVE_LITTLE_ENDIAN
 
 #define _FILE_OFFSET_BITS 64
-#define _LARGEFILE_SOURCE 1
+/* #define _LARGEFILE_SOURCE 1 */
 
 /*
  * Define if platform has off64_t (and lseek64 and other xxx64 functions)
@@ -200,7 +200,19 @@
  * Add any extra platform-specific defines here.
  */
 #ifndef __linux__
-#define __linux__
+#define __linux__ 1
+#endif
+
+#ifndef __linux
+#define __linux 1
+#endif
+
+#ifdef __unix__
+#undef __unix__
+#endif
+
+#ifdef __unix
+#undef __unix
 #endif
 
 /*
@@ -252,7 +264,7 @@
 /*
  * What CPU architecture does this platform use?
  */
-#define ARCH_AARCH64
+#define ARCH_MIPS64 1
 
 /*
  * Define if the size of enums is as short as possible,
@@ -350,13 +362,8 @@
 #define HAVE_PRINTF_ZD 1
 
 /*
- * Define to 1 if <stdlib.h> provides qsort_r() with a BSD style function prototype.
+ * Whether or not _Unwind_Context is defined as a struct.
  */
-#define HAVE_BSD_QSORT_R 0
-
-/*
- * Define to 1 if <stdlib.h> provides qsort_r() with a GNU style function prototype.
- */
-#define HAVE_GNU_QSORT_R 0
+#define HAVE_UNWIND_CONTEXT_STRUCT 1
 
 #endif /* _ANDROID_CONFIG_H */

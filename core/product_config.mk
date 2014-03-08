@@ -164,9 +164,11 @@ endif # unbundled_goals
 
 # Default to building dalvikvm on hosts that support it...
 ifeq ($(HOST_OS),linux)
+ifeq ($(BUILD_HOST_64bit),)
 # ... or if the if the option is already set
 ifeq ($(WITH_HOST_DALVIK),)
   WITH_HOST_DALVIK := true
+endif
 endif
 endif
 
@@ -266,10 +268,21 @@ $(call clear-var-list, $(_product_var_list))
 # Now we can assign to PRODUCT_RUNTIMES
 PRODUCT_RUNTIMES := $(product_runtimes)
 product_runtimes :=
+
+PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PROPERTY_OVERRIDES += persist.sys.dalvik.vm.lib.1=$(DALVIK_VM_LIB)
+
+ifeq ($(words $(PRODUCT_RUNTIMES)),1)
+  # If we only have one runtime, we can strip classes.dex by default during dex_preopt
+  DEX_PREOPT_DEFAULT := true
+else
+  # If we have more than one, we leave the classes.dex alone for post-boot analysis
+  DEX_PREOPT_DEFAULT := nostripping
+endif
+
 #############################################################################
 
 # A list of module names of BOOTCLASSPATH (jar files)
-PRODUCT_BOOT_JARS := $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_BOOT_JARS)
+PRODUCT_BOOT_JARS := $(strip $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_BOOT_JARS))
 
 # Find the device that this product maps to.
 TARGET_DEVICE := $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_DEVICE)
@@ -394,3 +407,7 @@ PRODUCT_OTA_PUBLIC_KEYS := $(sort \
 
 PRODUCT_EXTRA_RECOVERY_KEYS := $(sort \
     $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_EXTRA_RECOVERY_KEYS))
+
+# If there is no room in /system for the image, place it in /data
+PRODUCT_DEX_PREOPT_IMAGE_IN_DATA := \
+    $(strip $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_DEX_PREOPT_IMAGE_IN_DATA))

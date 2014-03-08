@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 The Android Open-Source Project
+# Copyright (C) 2013 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,14 +16,18 @@
 
 # This is a build configuration for a full-featured build of the
 # Open-Source part of the tree. It's geared toward a US-centric
-# build quite specifically for the emulator, and might not be
+# mips64 build quite specifically for the emulator, and might not be
 # entirely appropriate to inherit from for on-device configurations.
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base_telephony.mk)
-$(call inherit-product, $(SRC_TARGET_DIR)/board/generic_aarch64/device.mk)
+$(call inherit-product, $(SRC_TARGET_DIR)/board/generic_mips64/device.mk)
+
+PRODUCT_RUNTIMES := runtime_libart_default
 
 include $(SRC_TARGET_DIR)/product/emulator.mk
-PRODUCT_NAME := aosp_aarch64
-PRODUCT_DEVICE := generic_aarch64
+
+# Overrides
+PRODUCT_NAME := full_mips64
+PRODUCT_DEVICE := generic_mips64
 PRODUCT_BRAND := Android
-PRODUCT_MODEL := AOSP on ARM aarch64 Emulator
+PRODUCT_MODEL := AOSP on MIPS64 Emulator
