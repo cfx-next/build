@@ -193,6 +193,16 @@ ifeq ($(strip $(LOCAL_ENABLE_APROF)),true)
 endif
 
 ####################################################
+## Add QCOM CAF specific target specific flags
+# unless locally disabled (i.e. one or more of these
+# defines isn't desired for the module/target).
+####################################################
+ifeq ($(strip $(LOCAL_NO_QCOM_DEFINITION_SUPPORT)),)
+  LOCAL_CFLAGS += $(TARGET_QCOM_FLAGS)
+  LOCAL_CPPFLAGS += $(TARGET_QCOM_FLAGS)
+endif
+
+####################################################
 ## Add LTO flags if LTO is turned on, supported,
 # clang is not used for the module, and the module
 # is a target module
